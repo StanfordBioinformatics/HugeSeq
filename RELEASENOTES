@@ -7,6 +7,8 @@
 NOTE:  This is an alpha release.  Several components will need
 to be adjusted to work on other systems.
 
+## OPEN ISSUES ##
+
 * Many environment variables must be set.  See the hugeseq module
 file for an example.
 
@@ -16,4 +18,14 @@ and var_snp.sh
 * Package has never been tested on external systems.  Unforeseen
 issues may arise
 
+## FIXED ISSUES ##
+
+* Hardcoded paths in scripts removed and replaced with
+environment variables
+
+* Java process memory allocation adjusted to accommodate
+larger heap sizes
+
+* sam_sort step no longer fails due to outdated BAI
+files
 
