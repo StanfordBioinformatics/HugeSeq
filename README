@@ -7,6 +7,146 @@
 
 -- DEPENDENCIES
 
++ ANNOVAR version 20110506
+
++ BEDtools version 2.16.2
+
++ BreakDancer version 1.1
+
++ BreakSeq Lite version 1.3
+
++ BWA version 0.6.1
+
++ CNVnator version 0.2.2
+
++ GATK version 1.6-9
+
++ JDK version 1.6.0_21
+
++ Modules Release 3.2.8
+
++ Perl
+
++ Picard Tools version 1.64
+
++ Pindel version 0.2.2
+
++ Plantation version 2
+
++ pysam version 0.6
+
++ Python version 2.7
+
++ Simple Job Manager version 1.0
+
++ Tabix version 0.1.5
+
++ VCFtools version 0.1.5
+
 -- INSTALLATION
 
+HugeSeq is a modular, computational pipeline that runs in a Unix environment in a highly parallel fashion. It was tested on Red Hat Enterprise Linux (RHEL) server v5.6 but it should work in most Linux servers. The batch system it currently supports out-of-the-box is Sun Grid Engine.
+
+
+Batch System
+
+Many of the clusters are already installed with Sun Grid Engine (SGE). For installing SGE, please refer to the vendor's manual. 
+
+Running the analysis pipeline requires submitting many interdependent jobs to the batch scheduling system (e.g. Sun Grid Engine). Therefore, we developed a software program called SJM (Simple Job Manager) to simplify this process, including properly specifying the dependencies, tracking progress of the group of jobs, and responding properly if a job fails.
+
+For batch systems other than SGE, it requires developing an adaptor in SJM. Please write to us for more details.
+
+Modules Environment
+
+To manage different versions of softwares and parameters in the modules, HugeSeq uses a Unix software package called Environment Modules, which provides for the dynamic modification of a user's environment via modulefiles.
+
+To initiate Modules, modify your login profile such as .bash_profile to add the following:
+
+. /path-to-Modules/default/init/sh
+
+Supporting Tools
+
+Install the required softwares, such as the aligners, variant callers and manipulation tools, defined in the software requirements section. For details, please refer to the individual software websites. The softwares are recommended to be installed separately under a single parent directory, such as ~/apps/BreakSeq and ~/apps/CNVnator.
+
+Data Sets
+
+HugeSeq depends on several public data sets for alignment, variant calling, and annotations. They are:
+The reference genome (e.g. HG19 in FASTA format: hg19.fa)
+The BWA index of the reference genome (e.g. hg19.fa.bwt, hg19.fa.ann, etc)
+A .dict dictionary of the contig names and sizes (e.g. hg19.fa.dict)
+A .fai fasta index file (e.g. hg19.fa.fai)
+For creating .dict and .fai, please see here. All the indexes and dictionary should reside in the reference genome directory which contains the whole genome FASTA (e.g. hg19.fa)
+The breakpoint junctions (i.e. BreakSeq library in FASTA format: bplib.fa)
+The SNP annotation (i.e. dbSNP in ROD/VCF format: snp132.rod)
+The ANNOVAR databases (dbtype)
+UCSC Known Genes (knownGene)
+dbSNP (snp132)
+SIFT (avsift)
+RepeatMasker (buildver_rmsk.gff)
+The ANNOVAR databases should be installed in the humandb directory under the program's directory. The rest of the datasets are recommended to be stored under a single parent directory, such as ~/data/hg19 and ~/data/bplib. 
+
+HugeSeq
+
+Download HugeSeq to your server.
+
+Extract the programs from the compressed archive to a directory, such as ~/app. A directory like ~/app/HugeSeq will then be created, which contains the core program and its configuration. As described above, HugeSeq uses the Environment Modules package for configuration. Its modulefile is in the directory /path-to-HugeSeq/modulefiles/hugeseq named with its version, such as 1.0. To enable Modules to look up the modulefile for correct setting, modify the login profile as above and add the following:
+
+export MODULEPATH=/path-to-HugeSeq/modulefiles:$MODULEPATH
+
+In addition, modify the module file, such as /path-to-HugeSeq/modulefiles/hugeseq/1.0, and change all the programs' paths to the locations where you installed the required programs and the data paths to where you stored the datasets.
+
+Logout and login again to your shell to activate the login profile with the latest configuration. You should now be able to run HugeSeq by loading its module:
+
+> module load hugeseq
+
+After loading the module, you can run HugeSeq simply by typing:
+
+> hugeseq
+
+For the usage of HugeSeq, please refer to the Usage section.
+
 -- USAGE
+
+usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [-b] [-s INT] -o
+               DIR [-g STR] [-A] [-B] [-C] [-V] [-v TYPE [TYPE ...]] [--itx]
+               [--variantonly] [--nobinning] [--nocleanup] [--novariant]
+               [-j FILE] [-m SIZE] [-q NAME] [-t COUNT] [--submit]
+
+Generating the job file for the HugeSeq variant detection pipeline
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r FILE [FILE ...], --reads1 FILE [FILE ...]
+                        The FASTQ file(s) for reads 1
+  -R FILE [FILE ...], --reads2 FILE [FILE ...]
+                        The FASTQ file(s) for reads 2, if paired-end
+  -b, --bam             Support for aligned and coordinate-sorted BAMs as
+                        input (-r). No alignment will be performed.
+  -s INT, --split INT   Split input into INT reads per file (default: no
+                        split)
+  -o DIR, --output DIR  The output directory
+  -g STR, --readgroup STR
+                        The read group annotation (Default:
+                        @RG\tID:Default\tLB:Library\tPL:Illumina\tSM:SAMPLE)
+  -A, --donealign       Sequences already aligned
+  -B, --donebinning     Alignments already binned by chromosomes
+  -C, --donecleanup     Alignments already cleaned
+  -V, --donevariant     Variants already called
+  -v TYPE [TYPE ...], --variants TYPE [TYPE ...]
+                        SNP, INDEL, SRA, RPM, RDA, JCT (default to all)
+  --ctx                 Transchromosomal rearrangement detection (only
+                        relevant in binning mode)
+  --variantonly         Only call variants
+  --nobinning           Do not bin the alignments by chromosomes
+  --nocleanup           Do not clean up the alignments
+  --novariant           Do not call variants
+  -j FILE, --jobfile FILE
+                        The jobfile name (default: stdout)
+  -m SIZE, --memory SIZE
+                        Memory size (GB) per job (default: 12)
+  -q NAME, --queue NAME
+                        Queue for jobs (default: extended)
+  -t COUNT, --threads COUNT
+                        Number of threads for alignment, only works for SGE
+                        (default: 1)
+  --submit              Submit the jobs

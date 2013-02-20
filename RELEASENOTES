@@ -1,0 +1,19 @@
+##################################
+# Release Notes for HugeSeq v1.2 #
+##################################
+
+++++ 2/20/12 ++++
+
+NOTE:  This is an alpha release.  Several components will need
+to be adjusted to work on other systems.
+
+* Many environment variables must be set.  See the hugeseq module
+file for an example.
+
+* Hardcoded paths to a GATK key must be changed in clean_realn.sh
+and var_snp.sh
+
+* Package has never been tested on external systems.  Unforeseen
+issues may arise
+
+
