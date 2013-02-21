@@ -7,6 +7,14 @@
 NOTE:  This is an alpha release.  Several components will need
 to be adjusted to work on other systems.
 
+## ALGORITHMIC CHANGES SINCE 1.0.1 ##
+
+* BWA 0.5.9 -> 0.6.1
+
+* GATK 1.0.5506 -> 1.6-9
+
+* Changes to the way we merge and form the high confident calls. The merge_gff1.sh is the dafault, old version and 
+the merge_gff.sh is the new one. We will deprecate merge_gff1.sh in next iterative release.
 
 ## FIXED ISSUES ##
 
