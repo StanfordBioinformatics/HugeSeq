@@ -1,0 +1,78 @@
+##################################
+# Release Notes for HugeSeq v1.2 #
+##################################
+
+++++ 2/20/12 ++++
+
+NOTE:  This is an alpha release.  Several components will need
+to be adjusted to work on other systems.
+
+## ALGORITHMIC CHANGES SINCE 1.0.1 ##
+
+* BWA 0.5.9 -> 0.6.1
+
+* GATK 1.0.5506 -> 1.6-9
+
+* Changes to the way we merge and form the high confident calls. The merge_gff1.sh is the dafault, old version and 
+the merge_gff.sh is the new one. We will deprecate merge_gff1.sh in next iterative release.
+
+## FIXED ISSUES ##
+
+* Hardcoded paths in scripts removed and replaced with
+environment variables
+
+* Java process memory allocation adjusted to accommodate
+larger heap sizes
+
+* sam_sort step no longer fails due to outdated BAI
+files
+
+## OPEN ISSUES ##
+
+* Hardcoded paths to a GATK key must be changed in clean_realn.sh
+and var_snp.sh
+
+* Package has never been tested on external systems.  Unforeseen
+issues may arise
+
+* REF, and SNP are env variables - should be parameters
+
+* Many environment variables must be set.  See the hugeseq module
+file for an example. Using "module display hugeseq", here is what we have:
+
+setenv     HUGESEQ_INSTALL_DIR /srv/gs1/projects/scg/HugeSeq
+setenv     HUGESEQ_APP $HUGESEQ_INSTALL_DIR/app/
+setenv  	 HUGESEQ_HOME $HUGESEQ_APP/HugeSeq/v1.2 
+prepend-path	 PATH /srv/gs1/projects/scg/HugeSeq/app/HugeSeq/v1.2/bin 
+prepend-path	 PATH $HUGESEQ_APP/sjm-1.0/bin 
+prepend-path	 PATH $HUGESEQ_APP/jdk1.6.0_21/bin 
+prepend-path	 PATH $HUGESEQ_APP/python-2.7/bin 
+prepend-path	 LD_LIBRARY_PATH $HUGESEQ_APP/python-2.7/lib 
+prepend-path	 PATH $HUGESEQ_APP/bwa-0.6.1 
+setenv		 GATK $HUGESEQ_APP/GenomeAnalysisTK-1.6-9 
+setenv		 PINDEL $HUGESEQ_APP/pindel-r19 
+setenv		 BREAKDANCER $HUGESEQ_APP/breakdancer-1.1 
+setenv		 CNVNATOR $HUGESEQ_APP/CNVnator-0.2.2 
+setenv		 BREAKSEQ $HUGESEQ_APP/BreakSeqLite-1.0 
+setenv		 ANNOVAR $HUGESEQ_APP/annovar-v110506 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/File-Path-2.08/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/Statistics-Descriptive-2.6/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GD-2.45/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDGraph-1.44/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDGraph-histogram-1.1/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDTextUtil-0.86/blib/lib 
+prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/Math-CDF-0.1/blib/lib 
+setenv		 PICARD $HUGESEQ_APP/picard-tools-1.32 
+prepend-path	 PATH $HUGESEQ_APP/samtools-0.1.14 
+prepend-path	 PATH $HUGESEQ_APP/samtools-0.1.14/bcftools 
+prepend-path	 PATH $HUGESEQ_APP/BEDTools-Version-2.12.0/bin 
+prepend-path	 PATH $HUGESEQ_APP/tabix-0.2.4 
+prepend-path	 PATH $HUGESEQ_APP/vcftools_0.1.5/bin 
+prepend-path	 PERL5LIB $HUGESEQ_APP/vcftools_0.1.5/perl 
+setenv		 ROOTSYS $HUGESEQ_APP/root-5.26 
+prepend-path	 PATH $ROOTSYS/bin 
+prepend-path	 LD_LIBRARY_PATH $HUGESEQ_APP/root-5.26/lib 
+setenv		 TMP $HUGESEQ_INSTALL_DIR/data/tmp 
+setenv		 REF $HUGESEQ_APP/referencefiles/ucsc-hg19/ucsc.hg19.fasta 
+setenv		 SNP $HUGESEQ_APP/referencefiles/dbsnp/dbsnp_135.hg19.vcf 
+setenv		 BPLIB $HUGESEQ_APP/referencefiles/bplib/bplib.alt.fa 
