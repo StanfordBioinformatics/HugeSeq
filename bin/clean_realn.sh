@@ -25,8 +25,10 @@ java -Xms8g -Xmx8g -jar $GATK/GenomeAnalysisTK.jar \
 	-I $f \
 	-R $REF \
 	-o ${o/.bam/.intervals} \
-	-D $SNP $optL \
-	-et NO_ET
+        -known $SNP \
+	-et NO_ET \
+        -K /srv/gs1/projects/scg/HugeSeq/referencefiles/GATKkey/cuiping_stanford.edu.key
+   
 
 echo ">>> Running the realigner over the targeted intervals"
 java -Xms8g -Xmx8g -Djava.io.tmpdir=$TMP -jar $GATK/GenomeAnalysisTK.jar \
@@ -35,9 +37,11 @@ java -Xms8g -Xmx8g -Djava.io.tmpdir=$TMP -jar $GATK/GenomeAnalysisTK.jar \
 	-R $REF \
 	-o $o \
 	-targetIntervals ${o/.bam/.intervals} \
-	-D $SNP \
+        -known $SNP \
 	-LOD 5 $optL \
-	-et NO_ET
+	-et NO_ET \
+        -K /srv/gs1/projects/scg/HugeSeq/referencefiles/GATKkey/cuiping_stanford.edu.key
+
 
 echo ">>> Fixing the mate pairs and order of the realigned reads"
 java -Xms8g -Xmx8g -jar $PICARD/FixMateInformation.jar \

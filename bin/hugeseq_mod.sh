@@ -1,12 +1,15 @@
 #!/bin/bash -e
 
-MODULE_CMD=~/app/Modules/default/init/sh
+MODULE_CMD=/srv/gs1/apps/Modules/default/init/sh
 
-if [ -z "$HUGESEQ_HOME" ]
-then
-	source $MODULE_CMD
-	export MODULEPATH=`cd \`dirname $0\`/../modulefiles; pwd`:$MODULEPATH
-fi
+#if [ -z "$HUGESEQ_HOME" ]
+#then
+#	source $MODULE_CMD
+#	export MODULEPATH=`cd \`dirname $0\`/../../modulefiles; pwd`:$MODULEPATH
+#	echo $MODULEPATH
+#fi
+
+echo "hugeseq local"
 
 module load hugeseq
 

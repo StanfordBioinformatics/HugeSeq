@@ -17,8 +17,11 @@ do
         bams="$bams `cd \`dirname $i\`; pwd`/`basename $i`"
 done
 
-
 echo ">> Invoking the BreakSeq (Lite) program (Library: $BPLIB)"
 $BREAKSEQ/bin/breakseq $output $bams
+
+echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > ${output}.2
+sort -k1,1 -k4n -k5n < $output >> ${output}.2
+mv ${output}.2  $output
 
 echo "*** Finished Calling SV using BreakSeq ***"

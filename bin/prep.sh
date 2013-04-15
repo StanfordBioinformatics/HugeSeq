@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#export >> /srv/gs1/projects/snyder/cuiping/data/test/xxx
+
+
 if [ $# -lt 2 ]
 then
 	echo "Usage: $0 <input fasta/q> <link to input>"
@@ -9,16 +12,11 @@ fi
 i=`cd \`dirname $1\`; pwd`/`basename $1`
 l=`cd \`dirname $2\`; pwd`/`basename $2`
 
-if [ ! -e $l -a $i != $l ]
-then
-	echo ">> Creating link to input sequence file"
-	echo "-- Input: $i"
-	echo "-- Link : $l"
-	ln -s $i $l
+echo ">> Creating link to input sequence file"
+echo "-- Input: $i"
+echo "-- Link : $l"
 
-	if [[ $i =~ ".*\.bam" ]]
-	then
-		echo "-- Link : $l.bai"
-		ln -s $i.bai $l.bai
-	fi
+if [ ! -e $l ]
+then
+	ln -s $i $l
 fi

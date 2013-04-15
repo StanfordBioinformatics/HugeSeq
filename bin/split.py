@@ -14,8 +14,6 @@ lines = reads * 4
 
 gz = True if ifile.ext == "gz" else False
 
-fa = False
-
 input = gzip.open(ifile.path, "rb") if gz else open(ifile.path, "r")
 
 c = 0
@@ -27,14 +25,13 @@ for l in input:
 		c += 1
 		if l.startswith(">"):
 			lines = reads * 2
-			fa = True
-		ofilename = ifile.absprefix
-		ofile = File((ofilename+".S%06d."%c)+("gz" if gz else ("fa" if fa else "fq")))
-		print ofile
+		ofilename = ifile.absprefix if gz else ifile.path
+		ofile = File((ofilename+".S%06d"%c)+(".gz" if gz else ""))
 		if output is not None:
 			output.flush()
 			output.close()
-		output = gzip.open(ofile.path, "wb") if gz else open(ofile.path, "w")	
+                output = gzip.open(ofile.path, "wb") if gz else open(ofile.path, "w")
+		
 	output.write(l)
 
 if output is not None:

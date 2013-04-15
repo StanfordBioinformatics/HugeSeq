@@ -1,6 +1,6 @@
 #!/bin/bash -eu
 
-echo "*** Indexing BAM ***"
+echo "*** Indexing2 BAM ***"
 
 if [ $# -lt 1 ]
 then 
@@ -14,6 +14,8 @@ if [ ! -e $f.bai ]
 then
 	echo ">>> BAM file $f is being indexed"
 	samtools index $f
+	echo ">>> Fixing BAI name"
+	python $HUGESEQ_HOME/bin/fix_bai_name.py $f.bai
 fi
 
 echo "*** Finished indexing BAM ***"

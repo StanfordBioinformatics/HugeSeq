@@ -55,8 +55,10 @@ $CNVNATOR -root $p.root -call $binsize | grep -v "\(WARN\)\|\(==\)" > $p.txt
 echo ">> Converting output to GFF"
 
 minsize=50
-awkopt='{feat=$4; if ($4=="deletion") feat="Deletion"; else if ($4=="duplication") feat="Duplication"; if ($5>='$minsize') print $1"\tCNVnator\t"feat"\t"$2"\t"$3"\t.\t.\t.\tSize "$5";RD "$6};'
+awkopt='{feat=$4; if ($4=="deletion") feat="Deletion"; else if ($4=="duplication") feat="Duplication"; if ($5>='$minsize') print $1"\tCNVnator\t"feat"\t"$2"\t"$3"\t"$7" "$8" "$9" "$10" "$11"\t.\t.\tSize "$5";RD "$6};'
 
-cut -f 1,2,3,4 $p.txt | sed 's/\(.*\)	\(.*\):\(.*\)-\(.*\)	\(.*\)	\(.*\)/\2	\3	\4	\1	\5	\6/' | awk "$awkopt" | sort -k1,1 -k4n -k5n -u > $o
+echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > $o
+
+less $p.txt | sed 's/\(.*\)	\(.*\):\(.*\)-\(.*\)	\(.*\)	\(.*\)	\(.*\)	\(.*\)/\2	\3	\4	\1	\5	\6	p1: \7 | p2: \8/' | awk "$awkopt" | sort -k1,1 -k4n -k5n -u >> $o
 
 echo "*** Finished CNV Calling using Read-Depth Analysis"

@@ -37,34 +37,9 @@ $BREAKDANCER/cpp/breakdancer_max $optO $p.cfg > $p.txt
 
 echo ">> Converting output to GFF"
 minsize=50
-awkopt='
-{
-        size=$8; 
-        start=($2<=$5?$2:$5);
-        end=($5>=$2?$5:$2);
-        tx="";
-        if (size<0 && $7=="INS") 
-                size=-size; 
-        feat=$7; 
-        if ($7=="DEL") 
-                feat="Deletion"; 
-        else if ($7=="INS") 
-                feat="Insertion"; 
-        else if ($7=="INV") 
-                feat="Inversion";
-        else if ($7=="ITX" || $7=="CTX") {
-                feat="Translocation";
-                start=$2;
-                end=$2;
-                size=-1;
-                tx=";TX "$7";TCHR "$4";TSTART "$5
-        }
-        if (($7!="CTX" && $1==$4) || ($7=="CTX")) {
-                if (size>='$minsize' || size==-1) 
-                        print $1"\tBreakDancer\t"feat"\t"start"\t"end"\t.\t.\t.\tSize "size tx;
-        }
-}'
+awkopt='{size=$8; if (size<0 && $7=="INS") size=-size; feat=$7; if ($7=="DEL") feat="Deletion"; else if ($7=="INS") feat="Insertion"; else if ($7=="INV") feat="Inversion"; if (feat!="ITX" && $1==$4 && size>='$minsize') print $1"\tBreakDancer\t"feat"\t"($2<=$5?$2:$5)"\t"($5>=$2?$5:$2)"\t"$9"\t.\t.\tSize "size"; nr.reads: "$10};'
 
-grep -v '\#' $p.txt | awk "$awkopt" | sort -k1,1 -k4n -k5n -u > $o
+echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > $o
+grep -v '\#' $p.txt | awk "$awkopt" | sort -k1,1 -k4n -k5n -u >> $o
 
 echo "*** Finished Calling SV using Read-Pair Mapping ***"

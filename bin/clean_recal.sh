@@ -19,10 +19,11 @@ java -Xms5g -Xmx5g -jar $GATK/GenomeAnalysisTK.jar \
 	-cov CycleCovariate \
 	-cov DinucCovariate \
 	-R $REF \
-	--DBSNP $SNP \
+	--knownSites $SNP \
 	-I $f \
 	-recalFile ${o/.bam/.csv} \
-	-et NO_ET
+	-et NO_ET \
+        -K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
 
 echo ">> Table recalibration"
 if [ "`grep -v '#' ${o/.bam/.csv} | grep -v "EOF" | wc -l`" = "1" ]
@@ -37,7 +38,8 @@ else
 	-baq RECALCULATE \
 	--doNotWriteOriginalQuals \
 	-recalFile ${o/.bam/.csv} \
-	-et NO_ET
+	-et NO_ET \
+	-K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
 fi
 
 echo "*** Finished recalibrating base quality ***"

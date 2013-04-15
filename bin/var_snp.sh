@@ -32,15 +32,16 @@ java -Xms5g -Xmx5g -Djava.io.tmpdir=$TMP -jar $GATK/GenomeAnalysisTK.jar \
 	-T UnifiedGenotyper \
 	-I $f \
 	-R $REF \
-	-D $SNP \
+	-D:name,VCF $SNP \
 	-o $o $optL \
-	-et NO_ET \
 	-dcov 1000 \
 	-A AlleleBalance \
 	-A DepthOfCoverage \
 	-A MappingQualityZero \
 	-baq CALCULATE_AS_NECESSARY \
  	-stand_call_conf 30.0 \
-	-stand_emit_conf 10.0
-
+	-stand_emit_conf 10.0 \
+        -glm BOTH \
+        -et NO_ET \
+        -K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
 echo "*** Finished SNP Analysis using the GATK Unified Genotyper ***"

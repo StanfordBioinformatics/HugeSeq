@@ -64,14 +64,16 @@ echo ">> Converting output to GFF"
 
 minsize=50
 
-AWKOPT='{feat="Unknown"; if ($2=="D" || $2=="DI") feat="Deletion"; else if ($2=="I" || $2=="LI") feat="Insertion"; else if ($2=="INV") feat="Inversion"; else if ($2=="TD") feat="TandemDup"; start=$7; end=$8; if (feat!="Insertion") {start++; end--;} if ($3>='$minsize') print $5"\tPindel\t"feat"\t"start"\t"end"\t.\t.\t.\tSize "$3};'
+AWKOPT='{feat="Unknown"; if ($2=="D" || $2=="DI") feat="Deletion"; else if ($2=="I" || $2=="LI") feat="Insertion"; else if ($2=="INV") feat="Inversion"; else if ($2=="TD") feat="TandemDup"; start=$7; end=$8; if (feat!="Insertion") {start++; end--;} if ($3>='$minsize') print $5"\tPindel\t"feat"\t"start"\t"end"\t"$24"\t.\t.\tSize "$3"; nr.unique reads: (+"$17",-"$20"); ComScore: "int(sqrt(($17+1)*($20+1)*$24))}'
+
+echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > $o
 
 for po in ${p}_[^LBT]*
 do
-	grep "ChrID" $po | sed 's/D \([0-9]*\)	I \([0-9]*\)/DI \1:\2/' | sed 's/S1 \([0-9]*\)	.*/S1 \1/' | sed 's/NT[^	]*//' | awk "$AWKOPT"
-done | sort -k1,1 -k4n -k5n -u > $o
+	grep "ChrID" $po | sed 's/D \([0-9]*\)	I \([0-9]*\)/DI \1:\2/' | sed 's/SUM_MS \([0-9]*\)	.*/SUM_MS \1/' | sed 's/NT[^	]*//' | awk "$AWKOPT"
+done | sort -k1,1 -k4n -k5n -u >> $o
 
-echo ">> Archiving raw output"
-tar --remove-files -zcvf $p.tgz ${p}_*
+#echo ">> Archiving raw output"
+#tar --remove-files -zcvf $p.tgz ${p}_*
 
 echo "*** Finished calling SV using Split-Read Analysis: $PINDEL ***"
