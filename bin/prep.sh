@@ -1,8 +1,5 @@
 #!/bin/sh
 
-#export >> /srv/gs1/projects/snyder/cuiping/data/test/xxx
-
-
 if [ $# -lt 2 ]
 then
 	echo "Usage: $0 <input fasta/q> <link to input>"
@@ -18,5 +15,5 @@ echo "-- Link : $l"
 
 if [ ! -e $l ]
 then
-	ln -s $i $l
+	ln -sf $i $l
 fi

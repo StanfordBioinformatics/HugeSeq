@@ -28,20 +28,17 @@ then
 fi
 
 echo ">>> Running the unified genotyper for SNP calling"
-java -Xms5g -Xmx5g -Djava.io.tmpdir=$TMP -jar $GATK/GenomeAnalysisTK.jar \
-	-T UnifiedGenotyper \
-	-I $f \
-	-R $REF \
-	-D:name,VCF $SNP \
-	-o $o $optL \
-	-dcov 1000 \
-	-A AlleleBalance \
-	-A DepthOfCoverage \
-	-A MappingQualityZero \
-	-baq CALCULATE_AS_NECESSARY \
- 	-stand_call_conf 30.0 \
-	-stand_emit_conf 10.0 \
-        -glm BOTH \
-        -et NO_ET \
-        -K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
+java -Xmx9g -Xms9g -Djava.io.tmpdir=$TMP -jar $GATK/GenomeAnalysisTK.jar \
+   -T UnifiedGenotyper \
+   -R $REF \
+   -I $f \
+   --dbsnp $SNP \
+   -o $o \
+   -dcov 1000 \
+   -stand_call_conf 30.0 \
+   -stand_emit_conf 10.0 \
+   -gt_mode DISCOVERY \
+   --genotype_likelihoods_model BOTH \
+   -nct 2
+
 echo "*** Finished SNP Analysis using the GATK Unified Genotyper ***"

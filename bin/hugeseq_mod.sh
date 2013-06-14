@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-MODULE_CMD=/srv/gs1/apps/Modules/default/init/sh
+#MODULE_CMD=/srv/gs1/apps/Modules/default/init/sh
 
 #if [ -z "$HUGESEQ_HOME" ]
 #then
@@ -9,8 +9,8 @@ MODULE_CMD=/srv/gs1/apps/Modules/default/init/sh
 #	echo $MODULEPATH
 #fi
 
-echo "hugeseq local"
+#echo "hugeseq local"
 
-module load hugeseq
+module load hugeseq/1.2
 
 $*

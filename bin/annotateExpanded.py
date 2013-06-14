@@ -8,8 +8,8 @@ if len(sys.argv) <= 2:
 	print 'usage: <output file> <vcf or gff file>'
 	exit(1)
 	
-#path = os.environ['ANNOVAR']
-path = /srv/gs1/projects/snyder/cuiping/app/annovar/
+path = os.environ['ANNOVAR']
+#path = /srv/gs1/projects/snyder/cuiping/app/annovar/
 output = sys.argv[1]
 input = sys.argv[2]
 

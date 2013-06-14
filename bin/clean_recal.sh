@@ -23,7 +23,7 @@ java -Xms5g -Xmx5g -jar $GATK/GenomeAnalysisTK.jar \
 	-I $f \
 	-recalFile ${o/.bam/.csv} \
 	-et NO_ET \
-        -K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
+        -K /srv/gs1/software/gatk/GATKkey/stanford.edu.key
 
 echo ">> Table recalibration"
 if [ "`grep -v '#' ${o/.bam/.csv} | grep -v "EOF" | wc -l`" = "1" ]
@@ -39,7 +39,7 @@ else
 	--doNotWriteOriginalQuals \
 	-recalFile ${o/.bam/.csv} \
 	-et NO_ET \
-	-K /srv/gs1/projects/snyder/cuiping/data/referencefiles/GATKkey/cuiping_stanford.edu.key
+	-K /srv/gs1/software/gatk/GATKkey/stanford.edu.key
 fi
 
 echo "*** Finished recalibrating base quality ***"
