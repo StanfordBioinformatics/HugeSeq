@@ -214,14 +214,18 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
                         job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
                         job2.output=File(output+".vqsr.vcf")
                 elif ("SNP" in variants or "SNV" in variants) and "INDEL" not in variants:
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
                         job2.output=File(output+".vqsr.SNV.vcf")
                 elif "INDEL" in variants and "SNP" not in variants and "SNV" not in variants:
-                        job2.output=File(output+".vqsr.INDEL.vcf")
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                        job2.output=File(output+".vqsr.vcf")
+                        #job2.output=File(output+".vqsr.INDEL.vcf")
                 else:
                         job2.output=job1.output
                 job2.depend(job1)
                 jobs1.append(job2)
-        jobs2=jobs[1]
+
+	jobs2=jobs[1]
         job=None
         if (variants is None or "RPM" in variants):
                 job=Job('var_sv_rpm-%s'%idprefix)
@@ -272,17 +276,18 @@ def merge_annotate(siJobs, svJobs, variants):
         job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
         jobs.append(job1)
 
-        inputs=" ".join([j.output.path for j in svJobs])
-        job2=Job('merge_gff-%s'%sample)
-        job2.memory = "5G"
-        job2.output=File(outdir.path, sample+".svcnv.gff")
-        job2.append('merge_gff.sh %s %s'%(job2.output, inputs)).depend(*svJobs)
+	if variants is None or "SRA" in variants or "RPM" in variants or "RDA" in variants or "JCT" in variants:
+	        inputs=" ".join([j.output.path for j in svJobs])
+        	job2=Job('merge_gff-%s'%sample)
+	        job2.memory = "5G"
+        	job2.output=File(outdir.path, sample+".svcnv.gff")
+	        job2.append('merge_gff.sh %s %s'%(job2.output, inputs)).depend(*svJobs)
 
-        job3=Job('anno_gff-%s'%sample)
-        job3.memory = "6G"
-        job3.output=File(outdir.path, sample+".svcnv.tsv")
-        job3.append('annotate.py %s %s'%(job3.output, job2.output)).depend(job2)
-        jobs.append(job3)
+        	job3=Job('anno_gff-%s'%sample)
+	        job3.memory = "6G"
+        	job3.output=File(outdir.path, sample+".svcnv.tsv")
+	        job3.append('annotate.py %s %s'%(job3.output, job2.output)).depend(job2)
+        	jobs.append(job3)
 
         return jobs
 
