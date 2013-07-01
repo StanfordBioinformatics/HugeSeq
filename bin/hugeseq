@@ -197,33 +197,34 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
                 job0.output=File(output+".gatk.vcf")
                 job0.append('var_gatk.sh %s %s'%(job0.output,input))
                 job0.depend(*pjobs)
-        if not vqsr:
-                jobs1.append(job0)
-        else:
-                job1=Job('var_vqsr-%s'%idprefix)
-                job1.memory = "12G"
-                job1.output=File(job0.output)
-                job1.append('var_vqsr.sh %s'%(job1.output))
-                job1.depend(job0)
-                job2=Job('combineRecal_SNVINDEL_%s'%idprefix)
-                job2.memory = "3G"
-                if variants is None:
-                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                        job2.output=File(output+".vqsr.vcf")
-                elif ("SNP" in variants or "SNV" in variants) and "INDEL" in variants:
-                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                        job2.output=File(output+".vqsr.vcf")
-                elif ("SNP" in variants or "SNV" in variants) and "INDEL" not in variants:
-                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                        job2.output=File(output+".vqsr.SNV.vcf")
-                elif "INDEL" in variants and "SNP" not in variants and "SNV" not in variants:
-                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                        job2.output=File(output+".vqsr.vcf")
-                        #job2.output=File(output+".vqsr.INDEL.vcf")
-                else:
-                        job2.output=job1.output
-                job2.depend(job1)
-                jobs1.append(job2)
+
+        	if not vqsr:
+                	jobs1.append(job0)
+        	else:
+                	job1=Job('var_vqsr-%s'%idprefix)
+	                job1.memory = "12G"
+        	        job1.output=File(job0.output)
+                	job1.append('var_vqsr.sh %s'%(job1.output))
+	                job1.depend(job0)
+        	        job2=Job('combineRecal_SNVINDEL_%s'%idprefix)
+                	job2.memory = "3G"
+	                if variants is None:
+        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                	        job2.output=File(output+".vqsr.vcf")
+	                elif ("SNP" in variants or "SNV" in variants) and "INDEL" in variants:
+        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                	        job2.output=File(output+".vqsr.vcf")
+	                elif ("SNP" in variants or "SNV" in variants) and "INDEL" not in variants:
+        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                	        job2.output=File(output+".vqsr.SNV.vcf")
+	                elif "INDEL" in variants and "SNP" not in variants and "SNV" not in variants:
+        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                	        job2.output=File(output+".vqsr.vcf")
+                        	#job2.output=File(output+".vqsr.INDEL.vcf")
+	                else:
+        	                job2.output=job1.output
+                	job2.depend(job1)
+                	jobs1.append(job2)
 
 	jobs2=jobs[1]
         job=None
@@ -260,21 +261,23 @@ def group_output_by_suffix(suffixes, jobs):
 
 def merge_annotate(siJobs, svJobs, variants):
         jobs=[]
-        keys=".vqsr.vcf"
-        siCombinedVCFs=group_output_by_suffix(keys, siJobs)
 
-        job0=Job('concat-vcf-%s'%sample)
-        for i in siCombinedVCFs.keys():
-                job0.append('concat_vcf.sh %s %s'%(sample+".snpindel.vcf", " ".join(siCombinedVCFs[i])))
-        job0.memory = "8G"
-        job0.output=File(outdir.path, sample+".snpindel.vcf")
-        job0.depend(*siJobs)
-
-        job1=Job('anno_vcf-%s'%sample)
-        job1.memory = "6G"
-        job1.output=File(outdir.path, sample+".snpindel.tsv")
-        job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
-        jobs.append(job1)
+	if len(siJobs)>0:
+		keys=".vqsr.vcf"
+	        siCombinedVCFs=group_output_by_suffix(keys, siJobs)
+	
+		job0=Job('concat-vcf-%s'%sample)
+        	for i in siCombinedVCFs.keys():
+               		job0.append('concat_vcf.sh %s %s'%(sample+".snpindel.vcf", " ".join(siCombinedVCFs[i])))
+		job0.memory = "8G"
+        	job0.output=File(outdir.path, sample+".snpindel.vcf")
+		job0.depend(*siJobs)
+	
+		job1=Job('anno_vcf-%s'%sample)
+        	job1.memory = "6G"
+		job1.output=File(outdir.path, sample+".snpindel.tsv")
+        	job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
+		jobs.append(job1)
 
 	if variants is None or "SRA" in variants or "RPM" in variants or "RDA" in variants or "JCT" in variants:
 	        inputs=" ".join([j.output.path for j in svJobs])
@@ -347,7 +350,7 @@ while True:
                 #break
                 jobs=merge_annotate(siJobs, svJobs, args.variants)
                 #markdone(jobs, args.donevariant and not args.variantonly)
-                #markdone(jobs, not args.variantonly)
+                #markdone(jobs, not args.variantis)
                 #print >> sys.stderr, args.variantonly
 
         #print >> sys.stderr, Job().depend(*jobs).desc()
