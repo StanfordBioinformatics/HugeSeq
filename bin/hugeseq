@@ -108,8 +108,10 @@ def align(readjobs1, readjobs2):
                 readfile1=readjobs1[i].output
                 readfile2=readjobs2[i].output if paired else None
 
-                job1 = __align(readjobs1[i])
-                job2 = __align(readjobs2[i]) if paired else None
+		if paired:
+                	job1 = __align(readjobs1[i], readjobs2[i])
+		else:
+                	job1 = __alignbam(readjobs1[i])
 
                 bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
 
@@ -119,13 +121,29 @@ def align(readjobs1, readjobs2):
                 job3.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-6))
                 job3.append('sam_index.sh %s'%sorted)
                 job3.append('sam_rm.sh %s'%bam)
-                job3.depend(job2).depend(job1)
+                #job3.depend(job2).depend(job1)
+                job3.depend(job1)
                 job3.output=sorted
 
                 jobs.append(job3)
         return jobs
 
-def __align(readjob):
+def __align(readjob1, readjob2):
+        job = None
+        if (readjob1 is not None and readjob2 is not None):
+                readfile1=File(readjob1.output)
+                readfile2=File(readjob2.output)
+                job = Job('aln_mem_sam-%s' % readfile1.prefix)
+                job.memory = "8G"
+                job.append('aln_mem_sam.sh %s %s %s %s'%(readfile1,readfile2,args.threads,args.readgroup))
+                job.depend(readjob1).depend(readjob2)
+                if args.threads > 1:
+                        job.memory="%sG"%(args.memory/args.threads)
+                        job.sge_options="-pe shm %s -l h_stack=100M"%args.threads
+        return job
+
+
+def __alignbam(readjob):
         job = None
         if readjob is not None:
                 readfile=File(readjob.output)
@@ -197,34 +215,33 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
                 job0.output=File(output+".gatk.vcf")
                 job0.append('var_gatk.sh %s %s'%(job0.output,input))
                 job0.depend(*pjobs)
-
-        	if not vqsr:
-                	jobs1.append(job0)
-        	else:
-                	job1=Job('var_vqsr-%s'%idprefix)
-	                job1.memory = "12G"
-        	        job1.output=File(job0.output)
-                	job1.append('var_vqsr.sh %s'%(job1.output))
-	                job1.depend(job0)
-        	        job2=Job('combineRecal_SNVINDEL_%s'%idprefix)
-                	job2.memory = "3G"
-	                if variants is None:
-        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                	        job2.output=File(output+".vqsr.vcf")
-	                elif ("SNP" in variants or "SNV" in variants) and "INDEL" in variants:
-        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                	        job2.output=File(output+".vqsr.vcf")
-	                elif ("SNP" in variants or "SNV" in variants) and "INDEL" not in variants:
-        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                	        job2.output=File(output+".vqsr.SNV.vcf")
-	                elif "INDEL" in variants and "SNP" not in variants and "SNV" not in variants:
-        	                job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
-                	        job2.output=File(output+".vqsr.vcf")
-                        	#job2.output=File(output+".vqsr.INDEL.vcf")
-	                else:
-        	                job2.output=job1.output
-                	job2.depend(job1)
-                	jobs1.append(job2)
+        if not vqsr:
+                jobs1.append(job0)
+        else:
+                job1=Job('var_vqsr-%s'%idprefix)
+                job1.memory = "12G"
+                job1.output=File(job0.output)
+                job1.append('var_vqsr.sh %s'%(job1.output))
+                job1.depend(job0)
+                job2=Job('combineRecal_SNVINDEL_%s'%idprefix)
+                job2.memory = "3G"
+                if variants is None:
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                        job2.output=File(output+".vqsr.vcf")
+                elif ("SNP" in variants or "SNV" in variants) and "INDEL" in variants:
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                        job2.output=File(output+".vqsr.vcf")
+                elif ("SNP" in variants or "SNV" in variants) and "INDEL" not in variants:
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                        job2.output=File(output+".vqsr.SNV.vcf")
+                elif "INDEL" in variants and "SNP" not in variants and "SNV" not in variants:
+                        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+                        job2.output=File(output+".vqsr.vcf")
+                        #job2.output=File(output+".vqsr.INDEL.vcf")
+                else:
+                        job2.output=job1.output
+                job2.depend(job1)
+                jobs1.append(job2)
 
 	jobs2=jobs[1]
         job=None
@@ -261,23 +278,21 @@ def group_output_by_suffix(suffixes, jobs):
 
 def merge_annotate(siJobs, svJobs, variants):
         jobs=[]
+        keys=".vqsr.vcf"
+        siCombinedVCFs=group_output_by_suffix(keys, siJobs)
 
-	if len(siJobs)>0:
-		keys=".vqsr.vcf"
-	        siCombinedVCFs=group_output_by_suffix(keys, siJobs)
-	
-		job0=Job('concat-vcf-%s'%sample)
-        	for i in siCombinedVCFs.keys():
-               		job0.append('concat_vcf.sh %s %s'%(sample+".snpindel.vcf", " ".join(siCombinedVCFs[i])))
-		job0.memory = "8G"
-        	job0.output=File(outdir.path, sample+".snpindel.vcf")
-		job0.depend(*siJobs)
-	
-		job1=Job('anno_vcf-%s'%sample)
-        	job1.memory = "6G"
-		job1.output=File(outdir.path, sample+".snpindel.tsv")
-        	job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
-		jobs.append(job1)
+        job0=Job('concat-vcf-%s'%sample)
+        for i in siCombinedVCFs.keys():
+                job0.append('concat_vcf.sh %s %s'%(sample+".snpindel.vcf", " ".join(siCombinedVCFs[i])))
+        job0.memory = "8G"
+        job0.output=File(outdir.path, sample+".snpindel.vcf")
+        job0.depend(*siJobs)
+
+        job1=Job('anno_vcf-%s'%sample)
+        job1.memory = "6G"
+        job1.output=File(outdir.path, sample+".snpindel.tsv")
+        job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
+        jobs.append(job1)
 
 	if variants is None or "SRA" in variants or "RPM" in variants or "RDA" in variants or "JCT" in variants:
 	        inputs=" ".join([j.output.path for j in svJobs])
@@ -314,6 +329,7 @@ while True:
          #if not args.bamnoalign:
         #if not args.baminput:
         #if not (args.cleanuponly or args.variantonly):
+	#print >> sys.stderr, Job().depend(*jobs1).desc(), Job().depend(*jobs2).desc()
         jobs=align(jobs1, jobs2)
         #markdone(jobs, args.donealign or args.cleanuponly or args.variantonly)
         markdone(jobs, args.cleanuponly or args.variantonly)
@@ -350,7 +366,7 @@ while True:
                 #break
                 jobs=merge_annotate(siJobs, svJobs, args.variants)
                 #markdone(jobs, args.donevariant and not args.variantonly)
-                #markdone(jobs, not args.variantis)
+                #markdone(jobs, not args.variantonly)
                 #print >> sys.stderr, args.variantonly
 
         #print >> sys.stderr, Job().depend(*jobs).desc()
@@ -370,6 +386,5 @@ descout.write(Job().depend(*jobs).desc())
 descout.flush()
 
 if args.submit:
-        print >> sys.stderr, "Here...9"
         print >> sys.stderr, "Submitting jobs (%s) through SJM"%jobfile
-        os.system("sjm %s &" %jobfile)
+        #os.system("sjm %s &" %jobfile)
