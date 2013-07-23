@@ -30,17 +30,12 @@ echo $optT
 
 #exit()
 
-if [[ ${f: -4} = ".bam" ]]
-then
-        echo ">> BAM input"
-        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
-        echo $bwamem
-elif [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
+if [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
 then
         q1=`cd \`dirname $1\`; pwd`/`basename $1`
-	#q2=`cd \`dirname $2\`; pwd`/`basename $2`
+	q2=`cd \`dirname $2\`; pwd`/`basename $2`
 	echo $q1
-	#echo $q2
+	echo $q2
 	
 	if [[ ${f: -6}==".fastq" ]]
 	then
@@ -54,8 +49,7 @@ then
 	echo $f
 	echo $optRG
 	
-	#bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
-	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
+	bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
         echo $bwamem 
 fi
 
