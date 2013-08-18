@@ -15,7 +15,7 @@ optRG=""
 lastArg=${BASH_ARGV[0]}
 if [[ $lastArg =~ "@RG" ]]
 then
-        optRG="-r $lastArg"
+        optRG="-R $lastArg"
 fi
 echo $optRG
 
@@ -28,8 +28,6 @@ seclastArg=${@: -2:1}
 #echo $seclastArg
 echo $optT
 
-#exit()
-
 if [[ ${f: -4} = ".bam" ]]
 then
         echo ">> BAM input"
@@ -40,7 +38,6 @@ then
         q1=`cd \`dirname $1\`; pwd`/`basename $1`
 	#q2=`cd \`dirname $2\`; pwd`/`basename $2`
 	echo $q1
-	#echo $q2
 	
 	if [[ ${f: -6}==".fastq" ]]
 	then
@@ -53,7 +50,8 @@ then
 	fi
 	echo $f
 	echo $optRG
-	
+
+	exit()	
 	#bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
 	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
         echo $bwamem 

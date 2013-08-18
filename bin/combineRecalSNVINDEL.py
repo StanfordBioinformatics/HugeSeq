@@ -2,7 +2,6 @@
 
 import sys
 
-
 # Gets header from the original VCF file
 def writeHeader(fileIn, fileOut):
     line=fileIn.readline()

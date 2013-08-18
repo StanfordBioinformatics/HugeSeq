@@ -1,10 +1,10 @@
 #!/bin/env python
 
-import sys, os, re, argparse, subprocess
+import sys, os, re, argparse, subprocess, os.path
 from sjm import *
 from util import *
 from os import listdir
-from os.path import isfile, join
+from os.path import isfile, join, splitext
 
 try:
         home=os.environ['HUGESEQ_HOME']
@@ -16,10 +16,10 @@ except KeyError:
 parser = argparse.ArgumentParser(description='Generating the job file for the HugeSeq variant detection pipeline')
 parser.add_argument('-r', '--reads1', metavar='FILE', nargs="+", required=True, help='The FASTQ file(s) for reads 1')
 parser.add_argument('-R', '--reads2', metavar='FILE', nargs="+", help='The FASTQ file(s) for reads 2, if paired-end')
-parser.add_argument('-ba', '--baminput', action='store_true', help='Support for BAMs as input (-r) for alignment')
+parser.add_argument('--bam', action='store_true', help='Support for aligned BAMs as input. By default input (-r) is aligned again. Use --variantonly otherwise.')
 parser.add_argument('-o', '--output', metavar='DIR', required=True, help='The output directory')
-parser.add_argument('-g', '--readgroup', metavar='STR', default="@RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE", help='The read group annotation (Default: @RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE)')
-#parser.add_argument('-v', '--variants', metavar='TYPE', nargs="+", help='SNP or SNV, INDEL, SRA, RPM, RDA, JCT (default to all)')
+parser.add_argument('-T', '--tmp', metavar='DIR', help='The TMP directory for storing intermediate files (default=output directory')
+parser.add_argument('-g', '--readgroup', metavar='STR', default="\"@RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE\"", help='The read group annotation (Default: @RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE)')
 parser.add_argument('-v', '--variants', metavar='TYPE', nargs="+", help='SNV, SRA, RPM, RDA, JCT (default to all)')
 parser.add_argument('--alignmentonly', action='store_true', help='Only align input FASTQ or BAM files (-r)')
 parser.add_argument('--cleanuponly', action='store_true', help='Only clean up the input BAM files (-r)')
@@ -41,72 +41,59 @@ logdir=Dir(outdir, 'log')
 outdir.mkdirs()
 logdir.mkdirs()
 
-sample=re.match(r'(?:.+\\t)?SM:([^\\]+)', args.readgroup)
+tmpdir=outdir
+if (args.tmp is not None):
+	tmpdir=Dir(args.tmp)
+tmpdir.mkdirs()
+
+sample=re.match(r'(?:.+\\t)?SM:([^\\]+)"', args.readgroup)
 sample=outdir.name if sample is None else sample.group(1)
 
 Job.name_prefix=sample+"."
 Job.memory="%sG"%args.memory
 Job.queue=args.queue
 Job.cmd_prefix=os.path.join(home,'bin','hugeseq_mod.sh')
+
+tmpdir = getattr(__builtins__, 'str')(tmpdir)
+
+Job.cmd_prefix = Job.cmd_prefix + ' ' + tmpdir
 Job.log_dir=logdir.path
 
-print Job
-
-
-outdir=Dir(args.output)
-logdir=Dir(outdir, 'log')
-
-outdir.mkdirs()
-logdir.mkdirs()
-
-sample=re.match(r'(?:.+\\t)?SM:([^\\]+)', args.readgroup)
-sample=outdir.name if sample is None else sample.group(1)
-
-Job.name_prefix=sample+"."
-Job.memory="%sG"%args.memory
-Job.queue=args.queue
-Job.cmd_prefix=os.path.join(home,'bin','hugeseq_mod.sh')
-Job.log_dir=logdir.path
-
-def prep(readfiles):
+def prep(readfiles, ext):
         jobs=[]
-        if readfiles is None:
-                return jobs
-
-        for f in readfiles:
-                i = File(f)
-                o = File(outdir, i.name)
-                job0 = Job('prep_reads-%s'%i.prefix)
-                job0.append('prep.sh %s %s'%(i,o))
-                job0.memory="200M"
-                job0.output = o
-                if args.split <= 1:
-                        jobs.append(job0)
-                else:
-                        sr = File(outdir, o.name + ".split")
-                        job1 = Job('split_reads-%s'%i.prefix)
-                        job1.append('split.py %s %s'%(o,args.split))
-                        job1.memory="5G"
-                        job1.output = sr
-                        job1.depend(job0)
-                        gz = True if i.ext == "gz" else False
-                        ofilename = (o.absprefix if gz else o.path).split(".fastq")[0]
-                        for sf in range(1, args.split + 1):
-                                ofile = File((ofilename+".S%06d"%(sf)+".fastq")+(".gz" if gz else ""))
-                                job2 = Job('prep_reads-%s'%ofile.prefix)
-                                job2.append('prep.sh %s %s'%(ofile,ofile))
-                                job2.memory="200M"
-                                job2.output = ofile
-                                job2.depend(job1)
-                                jobs.append(job2)
+        if readfiles is not None:
+                sys.stderr.write(">>>  Pre-processing and splitting <<<\n")
+                for f in readfiles:
+                        i = File(f)
+			if ext == ".bwa.sorted.recal.bam":
+				o = File(outdir, i.prefix+ext)
+                	else:
+				o = File(outdir, i.name)
+                        job = Job('prep_reads-%s'%i.prefix)
+                        job.append('echo "Preprocessing done locally"')
+                        p = subprocess.Popen('prep.sh %s %s'%(i, o), shell=True, stdout=subprocess.PIPE)
+                        for l in p.stdout:
+                                sys.stderr.write(l)
+                        job.output = o
+                        if (args.split<=0 or ext is 'bam.sorted.recal.bam'):
+                                jobs.append(job)
+                        else:
+                                sys.stderr.write(">> Splitting %s\n" % i)
+                                p = subprocess.Popen('split.py %s %s'%(o,args.split), shell=True, stdout=subprocess.PIPE)
+                                for l in p.stdout:
+                                        so = File(l.rstrip())
+                                        job = Job('prep_reads-%s'%so.prefix)
+                                        job.append('echo "Splitting done locally"')
+                                        job.output = so
+                                        jobs.append(job)
         return jobs
 
-def align(readjobs1, readjobs2, baminput):
+def align(readjobs1, readjobs2, bam):
         jobs=[]
         for i in range(0, len(readjobs1)):
                 #paired = True if readjobs2 is not None and i<len(readjobs2) else False
 		paired = False
-                if (readjobs2 is not None and i<len(readjobs2) and not baminput):
+                if (readjobs2 is not None and i<len(readjobs2) and not bam):
 			paired = True	
 
                 readfile1=readjobs1[i].output
@@ -114,10 +101,10 @@ def align(readjobs1, readjobs2, baminput):
 
                 #job1 = __align(readjobs1[i])
                 #job2 = __align(readjobs2[i]) if paired else None
-		if (paired or baminput):
-			job1 = __align(readjobs1[i], None, baminput)
+		if ((not paired) or bam):
+			job1 = __align(readjobs1[i], None, bam)
 		else:
-			job1 = __align(readjobs1[i], readjobs2[i], baminput)
+			job1 = __align(readjobs1[i], readjobs2[i], bam)
                 
 		bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
 
@@ -134,10 +121,9 @@ def align(readjobs1, readjobs2, baminput):
 
         return jobs
 
-def __align(readjob1,readjob2,baminput):
+def __align(readjob1,readjob2,bam):
         job = None
-	if (baminput or (readjob2 is None)):
-		print "here!!!"
+	if (bam or (readjob2 is None)):
                 readfile=File(readjob1.output)
                 job = Job('aln_mem_sam-%s' % readfile.prefix)
                 job.memory = "8G"
@@ -230,11 +216,10 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 	                job1.depend(job0)
         	        job2=Job('combineRecal_SNVINDEL_%s'%idprefix)
                 	job2.memory = "3G"
-        	        job2.append('combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
+        	        job2.append('python combineRecalSNVINDEL.py %s %s %s'%(output+".vqsr.SNV.vcf", output+".vqsr.INDEL.vcf", output+".vqsr.vcf"))
                 	job2.output=File(output+".vqsr.vcf")
-                
-		job2.depend(job1)
-                jobs1.append(job2)
+                	job2.depend(job1)
+			jobs1.append(job2)
         
 	jobs2=jobs[1]
         job=None
@@ -321,15 +306,17 @@ def markdone(jobs, mark=True):
                                 markdone(job.dependents, mark)
                         job.status='done'
 
-jobs1=prep(args.reads1)
-if not args.baminput:
-        jobs2 = prep(args.reads2)
+
+extension=None
+jobs1=prep(args.reads1, extension)
+if not args.bam:
+        jobs2 = prep(args.reads2, extension)
         #jobs = jobs1 + jobs2
 else:
         jobs=jobs1
         jobs2=()
 
-jobs=align(jobs1, jobs2, args.baminput)
+jobs=align(jobs1, jobs2, args.bam)
 markdone(jobs, args.cleanuponly or args.variantonly)
 
 if args.cleanuponly or args.variantonly or args.alignmentonly:
@@ -342,13 +329,20 @@ if not args.nocleanup:
         jobs=cleanup(jobs)
         markdone(jobs, args.variantonly)
 
+if args.cleanuponly:
+	extension=".bwa.sorted.bam"
+	job0=prep(args.reads1, extension)
+	jobs = jobs+job0
+elif args.variantonly and args.bam:
+	extension=".bwa.sorted.recal.bam"
+	job0=prep(args.reads1, extension)
+	jobs = jobs+job0
+
 if not args.alignmentonly and not args.cleanuponly:
 	if not args.novqsr: vqsr = True
         else: vqsr = ""
-        print >> sys.stderr, args.variants
         
 	siJobs, svJobs=callvars(jobs, args.nobinning, args.variants, vqsr)
-        #markdone(siJobs+svJobs, args.donevariant)
         jobs=merge_annotate(siJobs, svJobs, args.variants)
 
 if args.jobfile is None and not args.submit:
@@ -365,4 +359,4 @@ descout.flush()
 
 if args.submit:
         print >> sys.stderr, "Submitting jobs (%s) through SJM"%jobfile
-        #os.system("sjm %s &" %jobfile)
+        os.system("sjm %s &" %jobfile)

@@ -10,48 +10,35 @@ fi
 
 
 f=`cd \`dirname $1\`; pwd`/`basename $1`
-echo $f
+
 optRG=""
 lastArg=${BASH_ARGV[0]}
 if [[ $lastArg =~ "@RG" ]]
 then
-        optRG="-r $lastArg"
+        optRG="-R $lastArg"
 fi
-echo $optRG
 
 optT=""
 seclastArg=${@: -2:1}
-#if [[ $seclastArg =~ "^[0-9]+$" ]]
-#then
-        optT="-t $seclastArg"
-#fi
-#echo $seclastArg
-echo $optT
-
-#exit()
+optT="-t $seclastArg"
 
 if [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
 then
         q1=`cd \`dirname $1\`; pwd`/`basename $1`
 	q2=`cd \`dirname $2\`; pwd`/`basename $2`
-	echo $q1
-	echo $q2
-	
-	if [[ ${f: -6}==".fastq" ]]
+
+	if [[ ${f: -6} == ".fastq" ]]
 	then
 		f=$(echo $f | sed -e "s/.fastq//g")
 		output="${f}bwa.bam"
-	fi
-	if [[ ${f: -9}==".fastq.gz" ]]
+		echo "1"
+	elif [[ ${f: -9} == ".fastq.gz" ]]
 	then
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
+		echo "2"
 	fi
-	echo $f
-	echo $optRG
-	
 	bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
         echo $bwamem 
 fi
-
 
 echo "*** Finished aligning reads ***"

@@ -12,6 +12,11 @@ fi
 f=`cd \`dirname $1\`; pwd`/`basename $1`
 o=`cd \`dirname $2\`; pwd`/`basename $2`
 
+#echo $o
+#o1=`${o/.bam/.intervals}`
+
+#echo $o1
+#exit
 optL=''
 if [[ "$1" =~ ".*chr[^.]*\..*" ]]
 then
