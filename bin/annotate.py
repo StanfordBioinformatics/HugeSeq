@@ -38,22 +38,25 @@ else:
 avoutput=output
 
 print 'Annotating variants with hg19 UCSC knownGene...\n'
+temp=('%s/annotate_variation.pl --geneanno --buildver hg19 -dbtype knownGene --separate %s %s/humandb/' %(path, avinput, path))
+print temp
 os.system('%s/annotate_variation.pl --geneanno --buildver hg19 -dbtype knownGene --separate %s %s/humandb/' %(path, avinput, path))
 print 'Annotating variants with hg19 RMSK...\n'
+
+temp=('%s/annotate_variation.pl -regionanno --buildver hg19 -dbtype gff3 -gff3dbfile hg19_rmsk.gff %s %s/humandb/' %(path, avinput, path))
+print temp
 os.system('%s/annotate_variation.pl -regionanno --buildver hg19 -dbtype gff3 -gff3dbfile hg19_rmsk.gff %s %s/humandb/' %(path, avinput, path))
 if isVCF:
 	print 'Annotating variants with sift scores using hg19...\n'
 	os.system('%s/annotate_variation.pl --filter --sift_threshold 0 --buildver hg19 --separate -dbtype avsift %s %s/humandb/' %(path, avinput, path))
-	print 'Annotating variants with dbSNP132...\n'
-	os.system('%s/annotate_variation.pl --filter --buildver hg19 --dbtype snp132 %s %s/humandb/' %(path, avinput, path))
-	#print 'Annotating variants with wgEncodeBroadHistoneGm12878H3k4me1StdPk...\n'
-	#os.system('%s/annotate_variation.pl -regionanno --buildver hg19 -dbtype wgEncodeBroadHistoneGm12878H3k4me1StdPk -scorecolumn 5 %s %s/humandb/' %(path, avinput, path))
+	print 'Annotating variants with dbSNP137...\n'
+	os.system('%s/annotate_variation.pl --filter --buildver hg19 --dbtype snp137 %s %s/humandb/' %(path, avinput, path))
 
 
 exonic_file = avinput + '.exonic_variant_function'
 function_file = avinput + '.variant_function'
 sift_file = avinput + '.hg19_avsift_dropped'
-dbsnp_file = avinput + '.hg19_snp132_dropped'
+dbsnp_file = avinput + '.hg19_snp137_dropped'
 #meth_file = avinput + '.hg19_wgEncodeBroadHistoneGm12878H3k4me1StdPk'
 rmsk_file = avinput + ".hg19_gff3"
 
@@ -86,7 +89,7 @@ AVINPUT = open(avinput, 'r')
 AVOUTPUT = open(avoutput, 'w')
 AVOUTPUT.write("#chr\tstart\tend\tgene_name\ttype\trmsk");
 if isVCF:
-	AVOUTPUT.write("\tSIFT\tconsequence\tmutation_info\tdbsnp132")
+	AVOUTPUT.write("\tSIFT\tconsequence\tmutation_info\tdbsnp137")
 
 AVOUTPUT.write("\n")
 

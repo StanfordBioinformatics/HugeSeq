@@ -30,14 +30,14 @@ then
 	if [[ ${f: -6} == ".fastq" ]]
 	then
 		f=$(echo $f | sed -e "s/.fastq//g")
-		output="${f}bwa.bam"
+		output="${f}bam"
 		echo "1"
 	elif [[ ${f: -9} == ".fastq.gz" ]]
 	then
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
 		echo "2"
 	fi
-	bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
+	bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
         echo $bwamem 
 fi
 

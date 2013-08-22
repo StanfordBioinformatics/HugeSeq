@@ -31,7 +31,7 @@ echo $optT
 if [[ ${f: -4} = ".bam" ]]
 then
         echo ">> BAM input"
-        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
+        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
         echo $bwamem
 elif [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
 then
@@ -42,7 +42,7 @@ then
 	if [[ ${f: -6}==".fastq" ]]
 	then
 		f=$(echo $f | sed -e "s/.fastq//g")
-		output="${f}bwa.bam"
+		output="${f}bam"
 	fi
 	if [[ ${f: -9}==".fastq.gz" ]]
 	then
@@ -53,7 +53,7 @@ then
 
 	exit()	
 	#bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
-	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
+	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
         echo $bwamem 
 fi
 
