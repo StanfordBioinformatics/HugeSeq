@@ -26,6 +26,7 @@ parser.add_argument('--cleanuponly', action='store_true', help='Only clean up in
 parser.add_argument('--variantonly', action='store_true', help='Only call variants in input BAM files (-r)')
 parser.add_argument('--nobinning', action='store_true', help='Do not bin the alignments by chromosomes')
 parser.add_argument('--nocleanup', action='store_true', help='Do not clean up the alignments')
+parser.add_argument('--novariant', action='store_true', help='Do not call variants')
 parser.add_argument('--novqsr', action='store_true', help='Do not perform VQSR (variant quality score recalibration)')
 parser.add_argument('-j', '--jobfile', metavar='FILE', help='The jobfile name (default: stdout)')
 parser.add_argument('-m', '--memory', metavar='SIZE', type=int, default=12, help='Memory size (GB) per job (default: 12)')
@@ -84,25 +85,9 @@ def prep(readfiles, ext):
                         jobs.append(job)
         return jobs
 
-                #job3 = Job('aln_sam-%s'%readfile1.prefix)
-                #job3.append('aln_sam.sh %s %s %s "%s"'%(bam, readfile1, '-' if readfile2 is None else readfile2, args.readgroup))
-                #job3.depend(job1).depend(job2)
-
-                #sorted=bam.chext("sorted.bam")
-                #job4 = Job('sam_sort-%s'%readfile1.prefix)
-                #job4.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-1))
-                #job4.append('sam_index.sh %s'%sorted)
-                #job4.append('sam_rm.sh %s'%bam)
-                #job4.depend(job3)
-                #job4.output=sorted
-
-                #jobs.append(job4)
-        #return jobs
-
 def align(readjobs1, readjobs2):
         jobs=[]
         for i in range(0, len(readjobs1)):
-                #paired = True if readjobs2 is not None and i<len(readjobs2) else False
 		paired = False
                 if (readjobs2 is not None and i<len(readjobs2) and not args.bam):
 			paired = True	
@@ -390,17 +375,20 @@ markdone(jobs1+jobs2)
 
 jobs=[]
 jobs=align(jobs1, jobs2)
-markdone(jobs, args.cleanuponly or args.variantonly)
+#markdone(jobs, args.cleanuponly or args.variantonly)
+markdone(jobs, args.donealign or args.cleanuponly or args.variantonly)
 
 if args.cleanuponly or args.variantonly or args.alignmentonly:
 	args.nobinning = True
 
 if not args.nobinning:
 	jobs=binning(jobs, refi)
+        markdone(jobs, args.donebinning or args.variantonly)	# new from old version
 
 if not args.nocleanup:
         jobs=cleanup(jobs)
-        markdone(jobs, args.variantonly)
+        #markdone(jobs, args.variantonly)
+        markdone(jobs, args.donecleanup or args.variantonly)
 
 if args.cleanuponly:
 	extension=".sorted.bam"
@@ -411,12 +399,13 @@ elif args.variantonly and args.bam:
 	job0=prep(args.reads1, extension)
 	jobs = jobs+job0
 
-if not args.alignmentonly and not args.cleanuponly:
+if not args.alignmentonly and not args.cleanuponly and not args.novariant:
 	if not args.novqsr: vqsr = True
         else: vqsr = ""
-        
 	siJobs, svJobs=callvars(jobs, args.nobinning, args.variants, vqsr)
+        markdone(siJobs+svJobs, args.donevariant)		# new from old version
         jobs=merge_annotate(siJobs, svJobs, args.variants)
+        markdone(jobs, args.donevariant and not args.variantonly)	# new from old version
 
 if args.jobfile is None and not args.submit:
         jobfile=None
@@ -430,33 +419,6 @@ descout = sys.stdout if jobfile is None else open(jobfile.path, "w")
 descout.write(Job().depend(*jobs).desc())
 descout.flush()
 
->>>>
-jobs=[]
-if not args.bam:
-        jobs=align(jobs1, jobs2)
-        markdone(jobs, args.donealign or args.variantonly)
-else:
-        jobs=jobs1+jobs2
-if not args.nobinning:
-        jobs=binning(jobs, refi)
-        markdone(jobs, args.donebinning or args.variantonly)
-if not args.nocleanup:
-        jobs=cleanup(jobs)
-        markdone(jobs, args.donecleanup or args.variantonly)
-if not args.novariant:
-        siJobs, svJobs=callvars(jobs, args.nobinning, args.variants)
-        markdone(siJobs+svJobs, args.donevariant)
-        jobs=merge_annotate(siJobs, svJobs)
-        markdone(jobs, args.donevariant and not args.variantonly)
-
-jobfile=None if args.jobfile is None and not args.submit else (File(outdir, "job") if args.jobfile is None else File(args.jobfile))
-
-descout = sys.stdout if jobfile is None else open(jobfile.path, "w")
-descout.write(Job().depend(*jobs).desc())
-descout.flush()
-
-
-<<<<
 if args.submit:
         print >> sys.stderr, "Submitting jobs (%s) through SJM"%jobfile
         os.system("sjm %s &" %jobfile)
