@@ -29,15 +29,15 @@ prepend-path PATH $app_dir/python-2.7/bin
 prepend-path LD_LIBRARY_PATH $app_dir/python-2.7/lib
 
 # Setting paths and env for alignment tools
-prepend-path PATH $app_dir/bwa-0.5.9
+prepend-path PATH $app_dir/bwa-0.7.4
 
 # Setting paths and env for variant detection annotation tools
-setenv GATK $app_dir/GenomeAnalysisTK-1.0.5506
-setenv PINDEL $app_dir/pindel-r19
-setenv BREAKDANCER $app_dir/breakdancer-1.1
-setenv CNVNATOR $app_dir/CNVnator-0.2.2
+setenv GATK $app_dir/GenomeAnalysisTK-2.5-2-gf57256b
+setenv PINDEL $app_dir/pindel-0.2.4d
+setenv BREAKDANCER $app_dir/breakdancer-1.1.2
+setenv CNVNATOR $app_dir/CNVnator-0.2.7
 setenv BREAKSEQ $app_dir/BreakSeqLite-1.0
-setenv ANNOVAR $app_dir/annovar-v110506
+setenv ANNOVAR $app_dir/annovar-v20130509
 
 # Setting perl libraries (for BreakDancer)
 prepend-path PERL5LIB $app_dir/perllib/File-Path-2.08/blib/lib
@@ -52,18 +52,22 @@ prepend-path PERL5LIB $app_dir/perllib/Math-CDF-0.1/blib/lib
 setenv PICARD $app_dir/picard-tools-1.32
 prepend-path PATH $app_dir/samtools-0.1.14
 prepend-path PATH $app_dir/samtools-0.1.14/bcftools
-prepend-path PATH $app_dir/BEDTools-Version-2.12.0/bin
-prepend-path PATH $app_dir/tabix-0.2.4
-prepend-path PATH $app_dir/vcftools_0.1.5/bin
-prepend-path PERL5LIB $app_dir/vcftools_0.1.5/perl
+prepend-path PATH $app_dir/BEDTools-Version-2.17.0/bin
+prepend-path PATH $app_dir/tabix-0.2.6
+prepend-path PATH $app_dir/vcftools_0.1.10/bin
+prepend-path PERL5LIB $app_dir/vcftools_0.1.10/perl
 
 # Setting paths and env for ROOT
-set rootsys $app_dir/root-5.26
+set rootsys $app_dir/root-5.34.07
 setenv ROOTSYS $rootsys
 prepend-path PATH $rootsys/bin
 prepend-path LD_LIBRARY_PATH $rootsys/lib
 
 # Setting env for supporting databases
-setenv REF $dat_dir/hg19/hg19.fa
-setenv SNP $dat_dir/hg19/snp131.rod
+setenv REF $dat_dir/b37/human_g1k_v37.fasta
+setenv SNP $dat_dir/b37/dbsnp_137.b37.vcf
 setenv BPLIB $dat_dir/bplib/bplib.alt.fa
+setenv VQSR_HAPMAP $dat_dir/b37/hapmap_3.3.b37.vcf
+setenv VQSR_OMNI $dat_dir/b37/1000G_omni2.5.b37.vcf
+setenv VQSR_SNPS $dat_dir/b37/1000G_phase1.snps.high_confidence.b37.vcf
+setenv VQSR_INDELS $dat_dir/b37/Mills_and_1000G_gold_standard.indels.b37.vcf

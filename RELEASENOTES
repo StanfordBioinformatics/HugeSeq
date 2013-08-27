@@ -2,77 +2,83 @@
 # Release Notes for HugeSeq v1.2 #
 ##################################
 
-++++ 2/20/12 ++++
+++++ 9/1/2013 ++++
 
-NOTE:  This is an alpha release.  Several components will need
-to be adjusted to work on other systems.
+NOTE:  This is a beta release.  Several components have been modified in the package to accomodate the following changes.
 
-## ALGORITHMIC CHANGES SINCE 1.0.1 ##
+## Tool "required" upgrades ##
 
-* BWA 0.5.9 -> 0.6.1
+The followig upgrades are "required" for HugeSeq-1.2 to operate properly:
 
-* GATK 1.0.5506 -> 1.6-9
+* BWA 0.5.9 -> 0.7.4
+* GATK 1.0.5506 -> > 2.5.2
 
-* Changes to the way we merge and form the high confident calls. The merge_gff1.sh is the dafault, old version and 
-the merge_gff.sh is the new one. We will deprecate merge_gff1.sh in next iterative release.
 
-## FIXED ISSUES ##
+## Tool "optional" upgrades ##
+The following upgrades are optional (Please note that the released file (~modulefiles/hugeseq/1.2) comes with the latest optional upgrades. In case any of the following items are not upgraded, please set appropriate versions in the modulefile.)
 
-* Hardcoded paths in scripts removed and replaced with
-environment variables
+* root -> 5.34.07
+* annovar -> 20130509
+* bedtools -> 2.17.0
+* picard-tools -> 1.32
+* cnvnator -> 0.2.7
+* breakdancer -> 1.1.2
+* tabix -> 0.2.6
+* samtools -> 0.1.19
+* breakseqlite -> 1.0
+* pindel -> 0.2.4d
+* vcftools -> 0.1.10
 
-* Java process memory allocation adjusted to accommodate
-larger heap sizes
 
-* sam_sort step no longer fails due to outdated BAI
-files
+## Major changes since 1.0.1 ##
+* Since the GATK upgrade to v>2.0 the following changes now in place:
 
-## OPEN ISSUES ##
+	- The "CountCovariates + TableRecalibration" (used in clean_recal.sh) is deprecated and replaced with "BaseRecalibrator +  PrintReads" using "GATK's best practices" recommendations.
+	- The GATK's new feature (VQSR) including "SelectVariants + VariantRecalibrator + ApplyRecalibration" for both SNPs and indels is implemented (in sv_vqsr.sh) and is a default option that follows genotyping. The feature can be turned off by an input patrameter (-- novqsr). 
+	- The input parameters corrsponding to SNP and indels are now unified into SNV (single nucleotide variations).  
+	- var_snp.sh is replaced with var_gatk.sh and hardcoded paths to GATK is replaced with environment variables.
+	- Hardcoded paths to a GATK is changed in clean_realn.sh.
 
-* Hardcoded paths to a GATK key must be changed in clean_realn.sh
-and var_snp.sh
+* Samtools is now deprecated for calling SNPs and indels.  These functions are now implemented by GATK.
 
-* Package has never been tested on external systems.  Unforeseen
-issues may arise
+* The TMP directory (for storing intermediate files) previously set as an environment variable is now controlled by an input parameters (--TMP). The default for TMP is the output directory. 
 
-* REF, and SNP are env variables - should be parameters
+* The "--split" function was previously performed on the "head node" be default. This is removed in the new version due to potential problems it causes for "SGE's head node" functions. We now recommend users to split their input files using the available script "split.py" before using the main script to split their input files. 
 
-* Many environment variables must be set.  See the hugeseq module
-file for an example. Using "module display hugeseq", here is what we have:
+* HugeSeq can now accept BAM input files with the following options:
 
-setenv     HUGESEQ_INSTALL_DIR /srv/gs1/projects/scg/HugeSeq
-setenv     HUGESEQ_APP $HUGESEQ_INSTALL_DIR/app/
-setenv  	 HUGESEQ_HOME $HUGESEQ_APP/HugeSeq/v1.2 
-prepend-path	 PATH /srv/gs1/projects/scg/HugeSeq/app/HugeSeq/v1.2/bin 
-prepend-path	 PATH $HUGESEQ_APP/sjm-1.0/bin 
-prepend-path	 PATH $HUGESEQ_APP/jdk1.6.0_21/bin 
-prepend-path	 PATH $HUGESEQ_APP/python-2.7/bin 
-prepend-path	 LD_LIBRARY_PATH $HUGESEQ_APP/python-2.7/lib 
-prepend-path	 PATH $HUGESEQ_APP/bwa-0.6.1 
-setenv		 GATK $HUGESEQ_APP/GenomeAnalysisTK-1.6-9 
-setenv		 PINDEL $HUGESEQ_APP/pindel-r19 
-setenv		 BREAKDANCER $HUGESEQ_APP/breakdancer-1.1 
-setenv		 CNVNATOR $HUGESEQ_APP/CNVnator-0.2.2 
-setenv		 BREAKSEQ $HUGESEQ_APP/BreakSeqLite-1.0 
-setenv		 ANNOVAR $HUGESEQ_APP/annovar-v110506 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/File-Path-2.08/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/Statistics-Descriptive-2.6/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GD-2.45/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDGraph-1.44/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDGraph-histogram-1.1/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/GDTextUtil-0.86/blib/lib 
-prepend-path	 PERL5LIB $HUGESEQ_APP/perllib/Math-CDF-0.1/blib/lib 
-setenv		 PICARD $HUGESEQ_APP/picard-tools-1.32 
-prepend-path	 PATH $HUGESEQ_APP/samtools-0.1.14 
-prepend-path	 PATH $HUGESEQ_APP/samtools-0.1.14/bcftools 
-prepend-path	 PATH $HUGESEQ_APP/BEDTools-Version-2.12.0/bin 
-prepend-path	 PATH $HUGESEQ_APP/tabix-0.2.4 
-prepend-path	 PATH $HUGESEQ_APP/vcftools_0.1.5/bin 
-prepend-path	 PERL5LIB $HUGESEQ_APP/vcftools_0.1.5/perl 
-setenv		 ROOTSYS $HUGESEQ_APP/root-5.26 
-prepend-path	 PATH $ROOTSYS/bin 
-prepend-path	 LD_LIBRARY_PATH $HUGESEQ_APP/root-5.26/lib 
-setenv		 TMP $HUGESEQ_INSTALL_DIR/data/tmp 
-setenv		 REF $HUGESEQ_APP/referencefiles/ucsc-hg19/ucsc.hg19.fasta 
-setenv		 SNP $HUGESEQ_APP/referencefiles/dbsnp/dbsnp_135.hg19.vcf 
-setenv		 BPLIB $HUGESEQ_APP/referencefiles/bplib/bplib.alt.fa 
+	- The input BAM files can be used "as is" for calling SNVs and SVs, as well as annotations. 
+	- The input BAM files can also undergo alignment (using BWA features to accept input BAM files) and then used for variation calling. 
+	
+* Changes to the way we merge and form the high confident calls by "merge_gff.sh".
+
+
+## Required additional datasets ##
+
+* GATK resources needed for VQSR feature is set in the modulefile using the following environment variables:
+
+setenv VQSR_HAPMAP $dat_dir/b37/hapmap_3.3.b37.vcf
+setenv VQSR_OMNI $dat_dir/b37/1000G_omni2.5.b37.vcf
+setenv VQSR_SNPS $dat_dir/b37/1000G_phase1.snps.high_confidence.b37.vcf
+setenv VQSR_INDELS $dat_dir/b37/Mills_and_1000G_gold_standard.indels.b37.vcf
+
+Therefore we recommend users to prepare these datasets by referring to:
+	- http://www.broadinstitute.org/gatk/guide/article?id=39 and
+	- http://gatkforums.broadinstitute.org/discussion/1213/what-s-in-the-resource-bundle-and-how-can-i-get-it
+
+## Accompanying datasets ##
+A set of inputs (fastqs and bam) are now provided as part of the release for testing purposes. The fastq files are ???? lines of NA12878 WEX dataset (DePristo et al. (2011) Nature Genetics): 
+
+* http://gatkforums.broadinstitute.org/discussion/1292/which-datasets-should-i-use-for-reviewing-or-benchmarking-purposes
+
+
+## Fixed issues ##
+
+* Hardcoded paths in scripts removed and replaced with environment variables
+* Java process memory allocation adjusted to accommodate larger heap sizes
+* sam_sort step no longer fails due to outdated BAI files
+
+
+## Open issues ##
+* Package has never been tested on external systems.  Unforeseen issues may arise
+
