@@ -10,23 +10,16 @@ fi
 
 
 f=`cd \`dirname $1\`; pwd`/`basename $1`
-echo $f
 optRG=""
 lastArg=${BASH_ARGV[0]}
 if [[ $lastArg =~ "@RG" ]]
 then
         optRG="-R $lastArg"
 fi
-echo $optRG
 
 optT=""
 seclastArg=${@: -2:1}
-#if [[ $seclastArg =~ "^[0-9]+$" ]]
-#then
-        optT="-t $seclastArg"
-#fi
-#echo $seclastArg
-echo $optT
+optT="-t $seclastArg"
 
 if [[ ${f: -4} = ".bam" ]]
 then
@@ -48,11 +41,7 @@ then
 	then
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
 	fi
-	echo $f
-	echo $optRG
 
-	exit()	
-	#bwamem="`bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -`"
 	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
         echo $bwamem 
 fi

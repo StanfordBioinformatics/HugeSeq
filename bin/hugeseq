@@ -179,9 +179,13 @@ def binning(pjobs, fai):
         jobs=[]
         chrs=[]
         for l in open(fai):
-                chr=re.split(r"\s", l)[0]
-                chrs.append(chr)
+                #chr=re.split(r"\s", l)[0]
+		m=re.match(r"(chr..|chr.)\t", l)
+		if m:
+                	chrs.append(m.group(1))
+
         for chr in chrs:
+		print chr
                 chrBam=File(outdir, chr+".bam")
                 job = Job('bin_aln-%s'%chr)
                 job.memory = "3G"
@@ -190,7 +194,8 @@ def binning(pjobs, fai):
                 job.append('sam_index.sh %s'%chrBam)
                 job.depend(*pjobs)
                 jobs.append(job)
-        return jobs
+	#exit()
+	return jobs
 
 def callvars(pjobs, combine, variants, vqsr):
         jobs=([],[])
@@ -209,7 +214,7 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 
 	if (variants is None or "SNV" in variants):
         	job0=Job('var_gatk-%s'%idprefix)
-        	job0.memory = "12G"
+        	job0.memory = "15G"
         	job0.output=File(output+".gatk.vcf")
         	job0.append('var_gatk.sh %s %s'%(job0.output,input))
         	job0.depend(*pjobs)
@@ -224,7 +229,7 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 	                job1.depend(job0)
         	        job2=Job('combineRecal_SnpIndel_%s'%idprefix)
                 	job2.memory = "3G"
-        	        job2.append('python combineRecalSnpIndel.py %s %s %s'%(output+".vqsr.snp.vcf", output+".vqsr.indel.vcf", output+".vcf"))
+        	        job2.append('combine_recal_snv_indel.py %s %s %s'%(output+".vqsr.snp.vcf", output+".vqsr.indel.vcf", output+".vcf"))
                 	job2.output=File(output+".vcf")
                 	job2.depend(job1)
 			jobs1.append(job2)
@@ -232,23 +237,23 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 	job=None
         if (variants is None or "RPM" in variants):
                 job=Job('var_sv_rpm-%s'%idprefix)
-                job.memory = "5G"
+                job.memory = "8G"
                 job.output=File(output+".rpm.gff")
                 jobs2.append(job.append('var_sv_rpm.sh %s %s'%(job.output,input)).depend(*pjobs))
         if (variants is None or "SRA" in variants):
                 rpmJob=job
                 job=Job('var_sv_sra-%s'%idprefix)
-                job.memory = "5G"
+                job.memory = "8G"
                 job.output=File(output+".sra.gff")
                 jobs2.append(job.append('var_sv_sra.sh %s %s'%(job.output,input)).depend(*pjobs if rpmJob is None else [rpmJob]))
         if (variants is None or "RDA" in variants):
                 job=Job('var_sv_rda-%s'%idprefix)
-                job.memory = "8G"
+                job.memory = "15G"
                 job.output=File(output+".rda.gff")
                 jobs2.append(job.append('var_sv_rda.sh %s %s'%(job.output,input)).depend(*pjobs))
         if (variants is None or "JCT" in variants):
                 job=Job('var_sv_jct-%s'%idprefix)
-                job.memory = "5G"
+                job.memory = "8G"
                 job.output=File(output+".jct.gff")
                 jobs2.append(job.append('var_sv_jct.sh %s %s'%(job.output,input)).depend(*pjobs))
 
@@ -368,10 +373,11 @@ extension=None
 jobs1=prep(args.reads1, extension)
 if not args.bam:
         jobs2 = prep(args.reads2, extension)
+	jobs=jobs1+jobs2
 else:
         jobs=jobs1
         jobs2=()
-markdone(jobs1+jobs2)
+markdone(jobs)
 
 jobs=[]
 jobs=align(jobs1, jobs2)

@@ -22,30 +22,14 @@ java -Xms5g -Xmx5g -jar $GATK/GenomeAnalysisTK.jar \
 	-cov QualityScoreCovariate \
 	-cov CycleCovariate \
         -K /srv/gs1/software/gatk/GATKkey/stanford.edu.key
-	#-cov DinucCovariate \
-	#-recalFile ${o/.bam/.csv} \
-	#-o ${o/.bam/.csv} \
-   	#-o recal_data.table
-	# output:? recal_data.grp
-	#-et NO_ET \
-#exit
-#echo ">> Table recalibration"
-#if [ "`grep -v '#' ${o/.bam/.csv} | grep -v "EOF" | wc -l`" = "1" ]
-#then
-#	cp $f $o
-#else
-	java -Xms5g -Xmx5g -jar $GATK/GenomeAnalysisTK.jar \
+	
+
+java -Xms5g -Xmx5g -jar $GATK/GenomeAnalysisTK.jar \
 	-R $REF \
 	-I $f \
 	-o $o \
 	-T PrintReads \
 	-BQSR ${o/.bam/.grp} \
 	-K /srv/gs1/software/gatk/GATKkey/stanford.edu.key
-	#-T TableRecalibration \
-	#-baq RECALCULATE \
-	#--doNotWriteOriginalQuals \
-	#-recalFile ${o/.bam/.csv} \
-	#-et NO_ET \
-#fi
 
 echo "*** Finished recalibrating base quality ***"

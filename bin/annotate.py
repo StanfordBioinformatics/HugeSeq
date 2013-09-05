@@ -57,7 +57,6 @@ exonic_file = avinput + '.exonic_variant_function'
 function_file = avinput + '.variant_function'
 sift_file = avinput + '.hg19_avsift_dropped'
 dbsnp_file = avinput + '.hg19_snp137_dropped'
-#meth_file = avinput + '.hg19_wgEncodeBroadHistoneGm12878H3k4me1StdPk'
 rmsk_file = avinput + ".hg19_gff3"
 
 def makeDict(filename, chrCol, startCol, endCol, valueCols, isGFF=False):
@@ -82,7 +81,6 @@ rmsk = makeDict(rmsk_file, 2, 3, 4, [1], True)
 if isVCF:
 	exonic = makeDict(exonic_file, 3, 4, 5, [1,2])
 	dbsnp = makeDict(dbsnp_file, 2, 3, 4, [1])
-	#meth = makeDict(meth_file, 2, 3, 4, [1])
 	sift = makeDict(sift_file, 2, 3, 4, [1])
 
 AVINPUT = open(avinput, 'r')
@@ -110,7 +108,6 @@ for line in AVINPUT:
 		if isVCF:
 			write(sift, key)
 			write(exonic, key, 2)
-			#write(meth, key)
 			write(dbsnp, key)
 		AVOUTPUT.write('\n')
 
@@ -120,4 +117,3 @@ AVOUTPUT.flush();
 AVINPUT.close();
 AVOUTPUT.close();
 
-#`rm $avinput.*`
