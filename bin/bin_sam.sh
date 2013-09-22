@@ -10,7 +10,6 @@ fi
 
 chr=$1
 out=`cd \`dirname $2\`; pwd`/`basename $2`
-echo $out
 shift 2
 
 bams=''

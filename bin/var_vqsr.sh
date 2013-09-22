@@ -55,9 +55,7 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -recalFile $SNP_RECAL \
    -tranchesFile $SNP_TRANCHES \
    -rscriptFile $SNP_RSCRIPT &> $PREFIX/$SAMPLE.recalibrate.snv.log
-   #--maxGaussians 4 \
-   #--minNumBadVariants 1000
-   #-mode SNP $VqsrMinNumBadVariants \
+   # $VqsrMinNumBadVariants \
 
 java -Xmx3g -Xms3g -jar $GATK/GenomeAnalysisTK.jar \
    -T ApplyRecalibration \

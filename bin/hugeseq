@@ -69,11 +69,13 @@ def prep(readfiles, ext):
                 sys.stderr.write(">>>  Pre-processing <<<\n")
                 for f in readfiles:
                         i = File(f)
-			if ext == ".sorted.recal.bam":
-				o = File(outdir, i.prefix+ext)
+			ii = File(f+".bai")
+                        if (ext==".sorted.bam" or ext==".sorted.recal.bam"):
+                                o = File(outdir, i.prefix+ext)
+                                oi = File(outdir, i.prefix+ext+".bai")
                         	job = Job('prep_reads_bam-%s'%i.prefix)
-                	else:
-				o = File(outdir, i.name)
+                        else:
+                                o = File(outdir, i.name)
                         	job = Job('prep_reads-%s'%i.prefix)
                         job.append('echo "Input preparation performed locally"')
                         p = subprocess.Popen('prep.sh %s %s'%(i, o), shell=True, stdout=subprocess.PIPE)
@@ -96,38 +98,21 @@ def align(readjobs1, readjobs2, ext):
                 readfile1=readjobs1[i].output
                 readfile2=readjobs2[i].output if paired else None
 
-                #job1 = __align(readjobs1[i])
-                #job2 = __align(readjobs2[i]) if paired else None
 		if ((not paired) or args.bam):
 			job1 = __align(readjobs1[i], None)
 		else:
 			job1 = __align(readjobs1[i], readjobs2[i])
                
-		print readfile1.ext
-		print readfile1.prefix
-		print outdir
-		print readfile1
-		print readfile1.chdir(outdir)
-                bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bam")
-		print bam
+                bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
                 
-		#job3 = Job('aln_sam-%s'%readfile1.prefix)
-                #job3.append('aln_sam.sh %s %s %s "%s"'%(bam, readfile1, '-' if readfile2 is None else readfile2, args.readgroup))
-                #job3.depend(job1).depend(job2)
-
-		print ext
                 if (ext!=".sorted.recal.bam" and ext!=".sorted.bam"):
 			sorted=bam.chext("sorted.bam")
 		else: 
 			sorted=bam
-		print "here"
-		print sorted
                 job4 = Job('sam_sort-%s'%readfile1.prefix)
                 job4.memory = "14G"
                 job4.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-1))
-                #job3.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-6))
                 job4.append('sam_index.sh %s'%sorted)
-                job4.append('sam_rm.sh %s'%bam)
                 job4.depend(job1)
                 job4.output=sorted
                 jobs.append(job4)
@@ -161,7 +146,6 @@ def __align(readjob1,readjob2):
 def cleanup(pjobs, ext):
         jobs=[]
         for pjob in pjobs:
-		print pjob.output
                 bam=pjob.output
                 if (ext!=".sorted.recal.bam"):
 			job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam.chext("nodup.bam"), False)
@@ -182,7 +166,7 @@ def __cleanup(jname, cmd, input, output, remove=True):
         job.memory = "12G"
         job.append('%s %s %s'%(cmd, input, output))
         job.append('sam_index.sh %s' % output)
-        if remove: job.append('sam_rm.sh %s'%input)
+        #if remove: job.append('sam_rm.sh %s'%input)
         job.output=output
         return job
 
@@ -196,7 +180,6 @@ def binning(pjobs, fai):
                 	chrs.append(m.group(1))
 
         for chr in chrs:
-		print chr
                 chrBam=File(outdir, chr+".bam")
                 job = Job('bin_aln-%s'%chr)
                 job.memory = "3G"
@@ -268,15 +251,6 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
                 job.output=File(output+".jct.gff")
                 jobs2.append(job.append('var_sv_jct.sh %s %s'%(job.output,input)).depend(*pjobs))
 
-#def group_output_by_suffix(suffixes, jobs):
-#        groups={}
-#        for s in suffixes:
-#                groups[s]=[]
-#        for i in jobs:
-#                for s in suffixes:
-#                        if i.output.path.endswith(s):
-#                                groups[s].append(i.output.path)
-#        return groups
 def group_output_by_suffix(suffixes, jobs):
         groups={}
 	groups[suffixes]=[]
@@ -284,39 +258,6 @@ def group_output_by_suffix(suffixes, jobs):
                 if i.output.path.endswith(suffixes):
                         groups[suffixes].append(i.output.path)
         return groups
-
-#def merge_annotate(siJobs, svJobs):
-#        jobs=[]
-#
-#        if len(siJobs)>0:
-#                siVCFs={".gatk.vcf":File(outdir.path, sample+".gatk.raw.vcf").path,".pileup.vcf":File(outdir.path, sample+".pileup.raw.vcf").path}
-#                siCombinedVCFs=group_output_by_suffix(siVCFs.keys(), siJobs)
-#
-#                job0=Job('concat-vcf-%s'%sample)
-#                for i in siVCFs.keys():
-#                        job0.append('concat_vcf.sh %s %s'%(siVCFs[i]," ".join(siCombinedVCFs[i])))
-#                job0.depend(*siJobs)
-#
-#                inputs=" ".join(siVCFs.values())
-#                job1=Job('merge_vcf-%s'%sample)
-#                job1.output=File(outdir.path, sample+".snpindel.vcf")
-#                job1.append('merge_vcf.sh %s %s'%(job1.output, inputs)).depend(job0)
-#                job2=Job('anno_vcf-%s'%sample)
-#                job2.output=File(outdir.path, sample+".snpindel.tsv")
-#                job2.append('annotate.py %s %s'%(job2.output, job1.output)).depend(job1)
-#                jobs.append(job2)
-#
-#        if len(svJobs)>0:
-#                inputs=" ".join([j.output.path for j in svJobs])
-#                job1=Job('merge_gff-%s'%sample)
-#                job1.output=File(outdir.path, sample+".svcnv.gff")
-#                job1.append('merge_gff.sh %s %s'%(job1.output, inputs)).depend(*svJobs)
-#                job2=Job('anno_gff-%s'%sample)
-#                job2.output=File(outdir.path, sample+".svcnv.tsv")
-#                job2.append('annotate.py %s %s'%(job2.output, job1.output)).depend(job1)
-#                jobs.append(job2)
-#
-#        return jobs
 
 def merge_annotate(siJobs, svJobs, variants):
         jobs=[]
@@ -360,32 +301,7 @@ def markdone(jobs, mark=True):
                                 markdone(job.dependents, mark)
                         job.status='done'
 
-
-#jobs=[]
-#if not args.bam:
-#        jobs=align(jobs1, jobs2)
-#        markdone(jobs, args.donealign or args.variantonly)
-#else:
-#        jobs=jobs1+jobs2
-#if not args.nobinning:
-#        jobs=binning(jobs, refi)
-#        markdone(jobs, args.donebinning or args.variantonly)
-#if not args.nocleanup:
-#        jobs=cleanup(jobs)
-#        markdone(jobs, args.donecleanup or args.variantonly)
-#if not args.novariant:
-#        siJobs, svJobs=callvars(jobs, args.nobinning, args.variants)
-#        markdone(siJobs+svJobs, args.donevariant)
-#        jobs=merge_annotate(siJobs, svJobs)
-#        markdone(jobs, args.donevariant and not args.variantonly)
-#
-
 extension=None
-#jobs1=prep(args.reads1, extension)
-#if not args.bam:
-#        jobs2 = prep(args.reads2, extension)
-#else:
-#        jobs2=()
 if args.bam:
 	if args.cleanuponly:
 		extension=".sorted.bam"
@@ -399,8 +315,6 @@ else:
 	jobs1=prep(args.reads1, extension)
 	jobs2=prep(args.reads2, extension)
 
-
-#markdone(jobs)
 jobs=[]
 jobs=align(jobs1, jobs2,extension)
 markdone(jobs, args.donealign or args.cleanuponly or args.variantonly)
@@ -421,9 +335,9 @@ if not args.alignmentonly and not args.cleanuponly and not args.novariant:
 	if not args.novqsr: vqsr = True
         else: vqsr = ""
 	siJobs, svJobs=callvars(jobs, args.nobinning, args.variants, vqsr)
-        markdone(siJobs+svJobs, args.donevariant)		# new from old version
+	markdone(siJobs+svJobs, args.donevariant)		
         jobs=merge_annotate(siJobs, svJobs, args.variants)
-        markdone(jobs, args.donevariant and not args.variantonly)	# new from old version
+        markdone(jobs, args.donevariant and not args.variantonly)
 
 if args.jobfile is None and not args.submit:
         jobfile=None

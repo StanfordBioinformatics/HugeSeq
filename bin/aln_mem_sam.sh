@@ -21,22 +21,14 @@ optT=""
 seclastArg=${@: -2:1}
 optT="-t $seclastArg"
 
-echo $seclastArg
-echo $optT
 if [[ ${f: -4} = ".bam" ]]
 then
         echo ">> BAM input"
-        #bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
-        bwamem="samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o $f.bam -"
-        echo $bwamem
-        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o $f.bam -`"
-        echo $bwamem
+        samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -
 	
 elif [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
 then
         q1=`cd \`dirname $1\`; pwd`/`basename $1`
-	#q2=`cd \`dirname $2\`; pwd`/`basename $2`
-	echo $q1
 	
 	if [[ ${f: -6}==".fastq" ]]
 	then
@@ -53,6 +45,5 @@ then
 	bwamem="`bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
         echo $bwamem 
 fi
-
 
 echo "*** Finished aligning reads ***"
