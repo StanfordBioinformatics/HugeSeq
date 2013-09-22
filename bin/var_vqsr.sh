@@ -49,7 +49,8 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -an MQRankSum \
    -an ReadPosRankSum \
    -mode SNP \
-   --minNumBadVariants 1000 \
+   --percentBadVariants 0.05 \
+   --maxGaussians 4 \
    -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
    -recalFile $SNP_RECAL \
    -tranchesFile $SNP_TRANCHES \
@@ -86,6 +87,8 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
     -percentBad 0.01 \
     -an ReadPosRankSum \
     -an MQRankSum \
+    --percentBadVariants 0.05 \
+    --maxGaussians 4 \
     -minNumBad 1000 \
     -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
     -recalFile $INDEL_RECAL \
@@ -102,4 +105,4 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -o $INDEL_RECAL_VCF \
    --mode INDEL &> $PREFIX/$SAMPLE.apply.indel.log 
 
-rm $SNP_VCF $SNP_RECAL $SNP_TRANCHES $PREFIX/*.log $INDEL_VCF $INDEL_RECAL $INDEL_TRANCHES
+#rm $SNP_VCF $SNP_RECAL $SNP_TRANCHES $PREFIX/*.log $INDEL_VCF $INDEL_RECAL $INDEL_TRANCHES
