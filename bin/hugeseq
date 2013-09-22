@@ -71,9 +71,10 @@ def prep(readfiles, ext):
                         i = File(f)
 			if ext == ".sorted.recal.bam":
 				o = File(outdir, i.prefix+ext)
+                        	job = Job('prep_reads_bam-%s'%i.prefix)
                 	else:
 				o = File(outdir, i.name)
-                        job = Job('prep_reads-%s'%i.prefix)
+                        	job = Job('prep_reads-%s'%i.prefix)
                         job.append('echo "Input preparation performed locally"')
                         p = subprocess.Popen('prep.sh %s %s'%(i, o), shell=True, stdout=subprocess.PIPE)
                         rc = p.wait()
@@ -85,7 +86,7 @@ def prep(readfiles, ext):
                         jobs.append(job)
         return jobs
 
-def align(readjobs1, readjobs2):
+def align(readjobs1, readjobs2, ext):
         jobs=[]
         for i in range(0, len(readjobs1)):
 		paired = False
@@ -114,7 +115,12 @@ def align(readjobs1, readjobs2):
                 #job3.append('aln_sam.sh %s %s %s "%s"'%(bam, readfile1, '-' if readfile2 is None else readfile2, args.readgroup))
                 #job3.depend(job1).depend(job2)
 
-                sorted=bam.chext("sorted.bam")
+		print ext
+                if (ext!=".sorted.recal.bam" and ext!=".sorted.bam"):
+			sorted=bam.chext("sorted.bam")
+		else: 
+			sorted=bam
+		print "here"
 		print sorted
                 job4 = Job('sam_sort-%s'%readfile1.prefix)
                 job4.memory = "14G"
@@ -152,14 +158,19 @@ def __align(readjob1,readjob2):
 
         return job
 
-def cleanup(pjobs):
+def cleanup(pjobs, ext):
         jobs=[]
         for pjob in pjobs:
 		print pjob.output
                 bam=pjob.output
-                job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam.chext("nodup.bam"), False)
-                job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam.chext("realn.bam"))
-                job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam.chext("recal.bam"))
+                if (ext!=".sorted.recal.bam"):
+			job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam.chext("nodup.bam"), False)
+                	job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam.chext("realn.bam"))
+                	job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam.chext("recal.bam"))
+		else:
+                	job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam, False)
+			job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam)
+                	job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam)
                 job1.depend(pjob)
                 job2.depend(job1)
                 job3.depend(job2)
@@ -370,18 +381,28 @@ def markdone(jobs, mark=True):
 #
 
 extension=None
-jobs1=prep(args.reads1, extension)
-if not args.bam:
-        jobs2 = prep(args.reads2, extension)
-	jobs=jobs1+jobs2
+#jobs1=prep(args.reads1, extension)
+#if not args.bam:
+#        jobs2 = prep(args.reads2, extension)
+#else:
+#        jobs2=()
+if args.bam:
+	if args.cleanuponly:
+		extension=".sorted.bam"
+	elif args.variantonly:
+		extension=".sorted.recal.bam"
+	else:
+		extension=None
+	jobs1=prep(args.reads1, extension)
+	jobs2=()
 else:
-        jobs=jobs1
-        jobs2=()
-markdone(jobs)
+	jobs1=prep(args.reads1, extension)
+	jobs2=prep(args.reads2, extension)
 
+
+#markdone(jobs)
 jobs=[]
-jobs=align(jobs1, jobs2)
-#markdone(jobs, args.cleanuponly or args.variantonly)
+jobs=align(jobs1, jobs2,extension)
 markdone(jobs, args.donealign or args.cleanuponly or args.variantonly)
 
 if args.cleanuponly or args.variantonly or args.alignmentonly:
@@ -389,21 +410,12 @@ if args.cleanuponly or args.variantonly or args.alignmentonly:
 
 if not args.nobinning:
 	jobs=binning(jobs, refi)
-        markdone(jobs, args.donebinning or args.variantonly)	# new from old version
+        markdone(jobs, args.donebinning or args.variantonly)
 
 if not args.nocleanup:
-        jobs=cleanup(jobs)
-        #markdone(jobs, args.variantonly)
+        jobs=cleanup(jobs, extension)
         markdone(jobs, args.donecleanup or args.variantonly)
 
-if args.cleanuponly:
-	extension=".sorted.bam"
-	job0=prep(args.reads1, extension)
-	jobs = jobs+job0
-elif args.variantonly and args.bam:
-	extension=".sorted.recal.bam"
-	job0=prep(args.reads1, extension)
-	jobs = jobs+job0
 
 if not args.alignmentonly and not args.cleanuponly and not args.novariant:
 	if not args.novqsr: vqsr = True

@@ -21,11 +21,17 @@ optT=""
 seclastArg=${@: -2:1}
 optT="-t $seclastArg"
 
+echo $seclastArg
+echo $optT
 if [[ ${f: -4} = ".bam" ]]
 then
         echo ">> BAM input"
-        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
+        #bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bam -`"
+        bwamem="samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o $f.bam -"
         echo $bwamem
+        bwamem="`samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o $f.bam -`"
+        echo $bwamem
+	
 elif [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
 then
         q1=`cd \`dirname $1\`; pwd`/`basename $1`
@@ -34,11 +40,13 @@ then
 	
 	if [[ ${f: -6}==".fastq" ]]
 	then
+	exit
 		f=$(echo $f | sed -e "s/.fastq//g")
 		output="${f}bam"
 	fi
 	if [[ ${f: -9}==".fastq.gz" ]]
 	then
+	exit
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
 	fi
 
