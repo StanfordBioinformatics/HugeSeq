@@ -231,13 +231,13 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 	job=None
         if (variants is None or "RPM" in variants):
                 job=Job('var_sv_rpm-%s'%idprefix)
-                job.memory = "8G"
+                job.memory = "15G"
                 job.output=File(output+".rpm.gff")
                 jobs2.append(job.append('var_sv_rpm.sh %s %s'%(job.output,input)).depend(*pjobs))
         if (variants is None or "SRA" in variants):
                 rpmJob=job
                 job=Job('var_sv_sra-%s'%idprefix)
-                job.memory = "8G"
+                job.memory = "12G"
                 job.output=File(output+".sra.gff")
                 jobs2.append(job.append('var_sv_sra.sh %s %s'%(job.output,input)).depend(*pjobs if rpmJob is None else [rpmJob]))
         if (variants is None or "RDA" in variants):

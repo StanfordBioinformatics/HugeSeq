@@ -50,6 +50,7 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -an ReadPosRankSum \
    -mode SNP \
    --percentBadVariants 0.05 \
+   --minNumBadVariants 1000 \
    --maxGaussians 4 \
    -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
    -recalFile $SNP_RECAL \
@@ -81,17 +82,19 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
     -resource:mills,known=true,training=true,truth=true,prior=12.0 $VQSR_INDELS \
     -an DP \
     -an FS \
-    -mode INDEL $VqsrMinNumBadVariants \
+    -mode INDEL \
     -percentBad 0.01 \
     -an ReadPosRankSum \
     -an MQRankSum \
     --percentBadVariants 0.05 \
+    --minNumBadVariants 1000 \
     --maxGaussians 4 \
     -minNumBad 1000 \
     -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
     -recalFile $INDEL_RECAL \
     -tranchesFile $INDEL_TRANCHES \
     -rscriptFile $INDEL_RSCRIPT &> $PREFIX/$SAMPLE.recalibrate.indel.log 
+    #$VqsrMinNumBadVariants \
 
 java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -T ApplyRecalibration \
