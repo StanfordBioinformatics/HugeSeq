@@ -50,13 +50,13 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -an ReadPosRankSum \
    -mode SNP \
    --percentBadVariants 0.05 \
-   --minNumBadVariants 1000 \
    --maxGaussians 4 \
    -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
    -recalFile $SNP_RECAL \
    -tranchesFile $SNP_TRANCHES \
    -rscriptFile $SNP_RSCRIPT &> $PREFIX/$SAMPLE.recalibrate.snv.log
    # $VqsrMinNumBadVariants \
+   #--minNumBadVariants 1000 \
 
 java -Xmx3g -Xms3g -jar $GATK/GenomeAnalysisTK.jar \
    -T ApplyRecalibration \
@@ -83,11 +83,9 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
     -an DP \
     -an FS \
     -mode INDEL \
-    -percentBad 0.01 \
     -an ReadPosRankSum \
     -an MQRankSum \
     --percentBadVariants 0.05 \
-    --minNumBadVariants 1000 \
     --maxGaussians 4 \
     -minNumBad 1000 \
     -tranche 100.0 -tranche 99.9 -tranche 99.0 -tranche 90.0 \
@@ -95,6 +93,8 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
     -tranchesFile $INDEL_TRANCHES \
     -rscriptFile $INDEL_RSCRIPT &> $PREFIX/$SAMPLE.recalibrate.indel.log 
     #$VqsrMinNumBadVariants \
+    #-percentBad 0.01 \
+    #--minNumBadVariants 1000 \
 
 java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
    -T ApplyRecalibration \
