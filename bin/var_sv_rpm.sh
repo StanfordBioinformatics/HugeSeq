@@ -29,7 +29,7 @@ then
         fi
 fi
 
-echo ">> Generating configuration file"
+echo ">> Generating configuration file $bams"
 perl $BREAKDANCER/perl/bam2cfg.pl $bams > $p.cfg
 
 echo ">> Performing read-pair mapping"

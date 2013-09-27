@@ -26,10 +26,10 @@ then
 fi
 
 bOpt=''
-if [ -e $rpm_output ]
-then
-	bOpt="-b $rpm_output"
-fi
+#if [ -e $rpm_output ]
+#then
+#	bOpt="-b $rpm_output"
+#fi
 
 pin_cfg=$p.cfg
 for bam in $*
@@ -55,9 +55,8 @@ do
 
 	echo -e "$bam\t$isize\t$sample"
 done > $pin_cfg
-
 pindel="$PINDEL/pindel -f $REF -i $pin_cfg -o $p -c $chr $bOpt"
-echo ">> Running Pindel on $chr: $pindel"
+echo ">> Running Pindel on $chr"
 $pindel
 
 echo ">> Converting output to GFF"
