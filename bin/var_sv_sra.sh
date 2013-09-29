@@ -65,7 +65,11 @@ minsize=50
 
 AWKOPT='{feat="Unknown"; if ($2=="D" || $2=="DI") feat="Deletion"; else if ($2=="I" || $2=="LI") feat="Insertion"; else if ($2=="INV") feat="Inversion"; else if ($2=="TD") feat="TandemDup"; start=$7; end=$8; if (feat!="Insertion") {start++; end--;} if ($3>='$minsize') print $5"\tPindel\t"feat"\t"start"\t"end"\t"$24"\t.\t.\tSize "$3"; nr.unique reads: (+"$17",-"$20"); ComScore: "int(sqrt(($17+1)*($20+1)*$24))}'
 
-echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > $o
+#echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > $o
+if [ -e "$o" ]
+then
+        rm $o
+fi
 
 for po in ${p}_[^LBT]*
 do

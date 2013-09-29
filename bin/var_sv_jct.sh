@@ -20,7 +20,11 @@ done
 echo ">> Invoking the BreakSeq (Lite) program (Library: $BPLIB)"
 $BREAKSEQ/bin/breakseq $output $bams
 
-echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > ${output}.2
+#echo -e "#Chr\tProgram\tSV-type\t\tstart\tend\tscore\tstrand\tframe\tattributes" > ${output}.2
+if [ -e "${output}.2" ]
+then
+	rm ${output}.2
+fi
 sort -k1,1 -k4n -k5n < $output >> ${output}.2
 mv ${output}.2  $output
 
