@@ -220,13 +220,17 @@ def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
 	                job1.memory = "12G"
         	        job1.output=File(job0.output)
                 	job1.append('var_vqsr.sh %s'%(job1.output))
+                	job1.output=File(output+".vcf")
+        	        job1.append('combine_vqsr.py %s %s %s'%(output+".vcf", output+".vqsr.snp.vcf", output+".vqsr.indel.vcf"))
 	                job1.depend(job0)
-        	        job2=Job('combineRecal_SnpIndel_%s'%idprefix)
-                	job2.memory = "3G"
-        	        job2.append('combine_recal_snv_indel.py %s %s %s'%(output+".vqsr.snp.vcf", output+".vqsr.indel.vcf", output+".vcf"))
-                	job2.output=File(output+".vcf")
-                	job2.depend(job1)
-			jobs1.append(job2)
+        	        #job2=Job('combineRecal_SnpIndel_%s'%idprefix)
+                	#job2.memory = "3G"
+        	        #job2.append('combine_recal_snv_indel.py %s %s %s'%(output+".vqsr.snp.vcf", output+".vqsr.indel.vcf", output+".vcf"))
+                	#job2.output=File(output+".vcf")
+                	#job2.depend(job1)
+			#jobs1.append(job2)
+			jobs1.append(job1)
+
 	jobs2=jobs[1]
 	job=None
         if (variants is None or "RPM" in variants):
