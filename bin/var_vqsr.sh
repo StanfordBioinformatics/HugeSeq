@@ -79,7 +79,7 @@ java -Xmx6g -Xms6g -jar $GATK/GenomeAnalysisTK.jar \
     -T VariantRecalibrator \
     -R $REF \
     -input $INDEL_VCF \
-    -resource:mills,known=true,training=true,truth=true,prior=12.0 $VQSR_INDELS \
+    -resource:mills,known=true,training=true,truth=true,prior=12.0 $VQSR_GOLD_INDELS \
     -an DP \
     -an FS \
     -mode INDEL \
