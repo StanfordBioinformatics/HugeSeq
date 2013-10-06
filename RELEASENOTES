@@ -8,7 +8,7 @@ NOTE:  This is a beta release.  Several components have been modified in the pac
 
 ## Tool "required" upgrades ##
 
-The followig upgrades are "required" for HugeSeq-1.2 to operate properly:
+The follownig upgrades are "required" for HugeSeq-1.2 to operate properly:
 
 * BWA 0.5.9 -> 0.7.4
 * GATK 1.0.5506 -> > 2.5.2

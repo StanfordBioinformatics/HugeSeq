@@ -7,67 +7,71 @@
 ##
 
 proc ModulesHelp { } {
+#        global hugeseq_version
         puts stderr "\tInitializes your environment to use the HugeSeq variant detection pipeline\n"
+        puts stderr "\tVersion $hugeseq_version\n"
 }
 
 module-whatis "Initializes the HugeSeq variant detection pipeline"
 
-
 # Setting paths and env for HugeSeq
-set app_dir ~/app
-set dat_dir ~/data
-set hugeseq_home $app_dir/hugeseq
-setenv HUGESEQ_HOME $hugeseq_home
-prepend-path PATH $hugeseq_home/bin
+# for Tcl script use only
+set hugeseqversion 1.2
 
-# Setting paths and env for the Simple Job Manager (SJM)
-prepend-path PATH $app_dir/sjm-1.0/bin
+# sets the MODULESAPPSDIR env var
+module add modsappsdir
+
+setenv HUGESEQ_HOME /srv/gs1/software/hugeseq/hugeseq-$hugeseqversion/HugeSeq
+setenv HUGESEQROOT /srv/gs1/software/hugeseq/hugeseq-$hugeseqversion/HugeSeq
+prepend-path PATH /srv/gs1/software/hugeseq/hugeseq-$hugeseqversion/HugeSeq/bin
+
+# Setting data resource directory
+set dat_dir /srv/gs1/projects/scg/Resources/GATK
 
 # Setting paths for programming tools
-prepend-path PATH $app_dir/jdk1.6.0_21/bin
-prepend-path PATH $app_dir/python-2.7/bin
-prepend-path LD_LIBRARY_PATH $app_dir/python-2.7/lib
+#module load java
+module load python/2.7
 
 # Setting paths and env for alignment tools
-prepend-path PATH $app_dir/bwa-0.7.4
+module load bwa/0.7.4
 
 # Setting paths and env for variant detection annotation tools
-setenv GATK $app_dir/GenomeAnalysisTK-2.5-2-gf57256b
-setenv PINDEL $app_dir/pindel-0.2.4d
-setenv BREAKDANCER $app_dir/breakdancer-1.1.2
-setenv CNVNATOR $app_dir/CNVnator-0.2.7
-setenv BREAKSEQ $app_dir/BreakSeqLite-1.0
-setenv ANNOVAR $app_dir/annovar-v20130509
+module load gatk
+module load cnvnator
+module load breakseqlite
+module load annovar
+module load samtools
 
 # Setting perl libraries (for BreakDancer)
-prepend-path PERL5LIB $app_dir/perllib/File-Path-2.08/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/Statistics-Descriptive-2.6/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/GD-2.45/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/GDGraph-1.44/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/GDGraph-histogram-1.1/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/GDTextUtil-0.86/blib/lib
-prepend-path PERL5LIB $app_dir/perllib/Math-CDF-0.1/blib/lib
+setenv PERLLIB /srv/gs1/software/hugeseq/hugeseq-1.2/perllib
+prepend-path PERL5LIB $::env(PERLLIB)/File-Path-2.08/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/Statistics-Descriptive-2.6/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GD-2.45/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDGraph-1.44/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDGraph-histogram-1.1/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDTextUtil-0.86/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/Math-CDF-0.1/blib/lib
 
 # Setting paths and env for utilities
-setenv PICARD $app_dir/picard-tools-1.32
-prepend-path PATH $app_dir/samtools-0.1.14
-prepend-path PATH $app_dir/samtools-0.1.14/bcftools
-prepend-path PATH $app_dir/BEDTools-Version-2.17.0/bin
-prepend-path PATH $app_dir/tabix-0.2.6
-prepend-path PATH $app_dir/vcftools_0.1.10/bin
-prepend-path PERL5LIB $app_dir/vcftools_0.1.10/perl
-
-# Setting paths and env for ROOT
-set rootsys $app_dir/root-5.34.07
-setenv ROOTSYS $rootsys
-prepend-path PATH $rootsys/bin
-prepend-path LD_LIBRARY_PATH $rootsys/lib
+module load breakdancer
+module load pindel
+module load bedtools
+module load tabix
+module load vcftools
+module load root
 
 # Setting env for supporting databases
-setenv REF $dat_dir/b37/human_g1k_v37.fasta
-setenv SNP $dat_dir/b37/dbsnp_137.b37.vcf
+setenv REF $dat_dir/hg19/ucsc.hg19.fasta
+setenv SNP $dat_dir/hg19/dbsnp_137.hg19.vcf
 setenv BPLIB $dat_dir/bplib/bplib.alt.fa
-setenv VQSR_HAPMAP $dat_dir/b37/hapmap_3.3.b37.vcf
-setenv VQSR_OMNI $dat_dir/b37/1000G_omni2.5.b37.vcf
-setenv VQSR_SNPS $dat_dir/b37/1000G_phase1.snps.high_confidence.b37.vcf
-setenv VQSR_INDELS $dat_dir/b37/Mills_and_1000G_gold_standard.indels.b37.vcf
+setenv VQSR_HAPMAP $dat_dir/hg19/hapmap_3.3.hg19.vcf
+setenv VQSR_OMNI $dat_dir/hg19/1000G_omni2.5.hg19.vcf
+setenv VQSR_SNPS $dat_dir/hg19/1000G_phase1.snps.high_confidence.hg19.vcf
+setenv VQSR_GOLD_INDELS $dat_dir/hg19/Mills_and_1000G_gold_standard.indels.hg19.vcf
+setenv VQSR_INDELS $dat_dir/hg19/1000G_phase1.indels.hg19.vcf
+#setenv VqsrMinNumBadVariants "--minNumBadVariants 1000"
+
+module load picard-tools/1.32
+
+# Setting paths and env for the Simple Job Manager (SJM)
+module load sjm
