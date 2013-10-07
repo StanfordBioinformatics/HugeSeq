@@ -70,7 +70,7 @@ def prep(readfiles, ext):
                 for f in readfiles:
                         i = File(f)
 			ii = File(f+".bai")
-                        if (ext==".sorted.bam" or ext==".sorted.recal.bam"):
+                        if (ext==".recal.bam"):
                                 o = File(outdir, i.prefix+ext)
                                 oi = File(outdir, i.prefix+ext+".bai")
                         	job = Job('prep_reads_bam-%s'%i.prefix)
@@ -103,12 +103,12 @@ def align(readjobs1, readjobs2, ext):
 		else:
 			job1 = __align(readjobs1[i], readjobs2[i])
                
-                bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
-                
-                if (ext!=".sorted.recal.bam" and ext!=".sorted.bam"):
-			sorted=bam.chext("sorted.bam")
+ 
+                if (ext==".recal.bam"):
+                	bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bam")
 		else: 
-			sorted=bam
+                	bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
+		sorted=bam
                 job4 = Job('sam_sort-%s'%readfile1.prefix)
                 job4.memory = "14G"
                 job4.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-1))
@@ -147,7 +147,7 @@ def cleanup(pjobs, ext):
         jobs=[]
         for pjob in pjobs:
                 bam=pjob.output
-                if (ext!=".sorted.recal.bam"):
+                if (ext!=".recal.bam"):
 			job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam.chext("nodup.bam"), False)
                 	job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam.chext("realn.bam"))
                 	job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam.chext("recal.bam"))
@@ -308,9 +308,9 @@ def markdone(jobs, mark=True):
 extension=None
 if args.bam:
 	if args.cleanuponly:
-		extension=".sorted.bam"
+		extension=".bam"
 	elif args.variantonly:
-		extension=".sorted.recal.bam"
+		extension=".recal.bam"
 	else:
 		extension=None
 	jobs1=prep(args.reads1, extension)

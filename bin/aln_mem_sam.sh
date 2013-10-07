@@ -24,6 +24,7 @@ optT="-t $seclastArg"
 if [[ ${f: -4} = ".bam" ]]
 then
         echo ">> BAM input"
+        #samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -
         samtools bam2fq $f | bwa mem -CMp $optT $optRG $REF - | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -
 	
 elif [[ ${f: -6}==".fastq" || ${f: -9}==".fastq.gz" ]]
@@ -42,7 +43,7 @@ then
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
 	fi
 
-	bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o ${f/.bam/}.bwa.bam -
+	bwa mem $REF $q1 $optT $optRG | samtools view -Sbt $REF.fai -o $f.bam -
         #echo $bwamem 
 fi
 

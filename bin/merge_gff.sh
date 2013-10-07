@@ -36,8 +36,14 @@ do
 	> $f.dup
 	> $f.uni
 	intersectBed -a $f -b $f -f 0.5 -r -c | awk '{print $0 > ($NF>1? "'$f.dup'": "'$f.uni'")}'
-	mergeBed -n -i $f.uni > $f.uni.merged
-	mergeBed -n -i $f.dup > $f.dup.merged
+	if [ -s $f.uni ]; 
+	then
+		mergeBed -n -i $f.uni > $f.uni.merged
+	fi
+	if [ -s $f.dup ]; 
+	then
+		mergeBed -n -i $f.dup > $f.dup.merged
+	fi
 	for i in $f.*.merged
 	do
 		dup="0"
