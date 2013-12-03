@@ -35,7 +35,7 @@ then
 	then
 		f=$(echo $f | sed -e "s/.fastq.gz//g")
 	fi
-	bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o $f.bam -
+	bwa mem $REF $q1 $q2 $optT $optRG | samtools view -Sbt $REF.fai -o $f.bwa.bam -
         #echo $bwamem 
 fi
 

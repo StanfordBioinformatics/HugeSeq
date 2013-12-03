@@ -26,10 +26,10 @@ then
 fi
 
 bOpt=''
-#if [ -e $rpm_output ]
-#then
-#	bOpt="-b $rpm_output"
-#fi
+if [ -e $rpm_output ]
+then
+	bOpt="-b $rpm_output"
+fi
 
 pin_cfg=$p.cfg
 for bam in $*
