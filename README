@@ -19,7 +19,7 @@
 
 + CNVnator version 0.2.7
 
-+ GATK version 2.8-1
++ GATK version 2.5.2
 
 + JDK version 1.6.0_21
 
@@ -107,11 +107,11 @@ For the usage of HugeSeq, please refer to the Usage section.
 
 -- USAGE
 
-usage: usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [--bam] -o DIR
+usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [--bam] -o DIR
                [-T DIR] [-g STR] [-v TYPE [TYPE ...]] [--novqsr]
                [--alignmentonly] [--cleanuponly] [--variantonly] [--nobinning]
                [--nocleanup] [--novariant] [-A] [-B] [-C] [-V] [-j FILE]
-               [-m SIZE] [-q NAME] [-t COUNT] -account STR [--submit]
+               [-m SIZE] [-q NAME] [-t COUNT] -account STR [--submit]:Q
 
 Generating the job file for the HugeSeq variant detection pipeline
 

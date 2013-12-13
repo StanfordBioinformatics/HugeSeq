@@ -11,22 +11,18 @@ NOTE:  This is a beta release.  Several components have been modified in the pac
 The following upgrades are "required" for HugeSeq-1.2 to operate properly:
 
 * BWA 0.5.9 -> 0.7.4
-* GATK 1.0.5506 -> 2.8-1
-
-## Tool "optional" upgrades ##
-The following upgrades are optional (Please note that the released file (~modulefiles/hugeseq/1.2) comes with the latest optional upgrades. In case any of the following items are not upgraded, please set appropriate versions in the modulefile.)
-
+* GATK 1.0.5506 -> 2.5.2
 * root -> 5.34.07
 * annovar -> 11122013 (Nov. 12, 2013)
-* bedtools -> 2.17.0
+* bedtools 2.12.0 -> 2.17.0
 * picard-tools -> 1.32
-* cnvnator -> 0.2.7
-* breakdancer -> 1.1.2
-* tabix -> 0.2.6
-* samtools -> 0.1.19
+* cnvnator 0.2.2 -> 0.2.7
+* breakdancer 1.1 -> 1.1.2
+* tabix 0.2.4 -> 0.2.6
+* samtools 0.1.14 -> 0.1.19
 * breakseqlite -> 1.0
-* pindel -> 0.2.4d
-* vcftools -> 0.1.10
+* pindel 0.2.2 -> 0.2.4d
+* vcftools 0.1.5 -> 0.1.10
 
 ## Major changes since 1.0.1 ##
 * Since the GATK upgrade to v>2.0 the following changes now in place:
@@ -64,12 +60,6 @@ setenv VQSR_INDELS $dat_dir/hg19/Mills_and_1000G_gold_standard.indels.hg19.vcf
 These are the datasets recommended as part of "GATK's best practices". We recommend users to prepare these datasets by referring to:
 	- http://www.broadinstitute.org/gatk/guide/article?id=39 and
 	- http://gatkforums.broadinstitute.org/discussion/1213/what-s-in-the-resource-bundle-and-how-can-i-get-it
-
-## Accompanying datasets ##
-A set of typical results from the pipeline (vcf, tsv, gff) are now provided as part of the release for testing purposes. The results are for NA12878 WEX dataset (DePristo et al. (2011) Nature Genetics): 
-
-* http://gatkforums.broadinstitute.org/discussion/1292/which-datasets-should-i-use-for-reviewing-or-benchmarking-purposes
-
 
 ## Fixed issues ##
 

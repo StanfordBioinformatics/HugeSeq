@@ -31,7 +31,7 @@ prepend-path LD_LIBRARY_PATH $app_dir/python-2.7/lib
 prepend-path PATH $app_dir/bwa-0.7.4
 
 # Setting paths and env for variant detection annotation tools
-setenv GATK $app_dir/GenomeAnalysisTK-2.8-1
+setenv GATK $app_dir/GenomeAnalysisTK-2.5.2
 setenv PINDEL $app_dir/pindel-0.2.4d
 setenv BREAKDANCER $app_dir/breakdancer-1.1.2
 setenv CNVNATOR $app_dir/CNVnator-0.2.7
@@ -74,4 +74,3 @@ setenv VQSR_OMNI $dat_dir/hg19/1000G_omni2.5.hg19.vcf
 setenv VQSR_SNPS $dat_dir/hg19/1000G_phase1.snps.high_confidence.hg19.vcf
 setenv VQSR_GOLD_INDELS $dat_dir/hg19/Mills_and_1000G_gold_standard.indels.hg19.vcf
 setenv VQSR_INDELS $dat_dir/hg19/1000G_phase1.indels.hg19.vcf
-#setenv VqsrMinNumBadVariants "--minNumBadVariants 1000"
