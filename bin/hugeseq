@@ -85,6 +85,13 @@ def prep(readfiles, ext):
                                 raise Exception, "Error in preparing input. Return code: %s"%rc
                         for l in p.stdout:
                                 sys.stderr.write(l)
+			if (ext==".recal.bam"):
+	                        p = subprocess.Popen('prep.sh %s %s'%(ii, oi), shell=True, stdout=subprocess.PIPE)
+        	                rc = p.wait()
+                	        if rc > 0:
+                        	        raise Exception, "Error in preparing input. Return code: %s"%rc
+	                        for l in p.stdout:
+        	                        sys.stderr.write(l)
                         job.output = o
                         job.sge_options="-A %s"%args.account
                         jobs.append(job)
@@ -108,11 +115,11 @@ def align(readjobs1, readjobs2, ext):
  
                 if (ext==".recal.bam"):
                 	bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bam")
+			sorted=bam.chext("bam")
 		else: 
                 	bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
+			sorted=bam.chext("sorted.bam")
 
-		sorted=bam.chext("sorted.bam")
-		#sorted=bam
                 job4 = Job('sam_sort-%s'%readfile1.prefix)
                 job4.memory = "14G"
                 job4.sge_options="-A %s"%args.account
@@ -195,7 +202,6 @@ def binning(pjobs, fai):
                 job.append('sam_index.sh %s'%chrBam)
                 job.depend(*pjobs)
                 jobs.append(job)
-	#exit()
 	return jobs
 
 def callvars(pjobs, combine, variants, vqsr):

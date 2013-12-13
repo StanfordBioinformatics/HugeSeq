@@ -7,19 +7,19 @@
 
 -- DEPENDENCIES
 
-+ ANNOVAR version 20110506
++ ANNOVAR version 11122013 (Nov. 12, 2013)
 
-+ BEDtools version 2.16.2
++ BEDtools version 2.17.0
 
-+ BreakDancer version 1.1
++ BreakDancer version 1.1.2
 
-+ BreakSeq Lite version 1.3
++ BreakSeq Lite version 1.0
 
-+ BWA version 0.6.1
++ BWA version 0.7.4
 
-+ CNVnator version 0.2.2
++ CNVnator version 0.2.7
 
-+ GATK version 1.6-9
++ GATK version 2.8-1
 
 + JDK version 1.6.0_21
 
@@ -39,9 +39,9 @@
 
 + Simple Job Manager version 1.0
 
-+ Tabix version 0.1.5
++ Tabix version 0.2.6
 
-+ VCFtools version 0.1.5
++ VCFtools version 0.1.10
 
 -- INSTALLATION
 
@@ -107,10 +107,11 @@ For the usage of HugeSeq, please refer to the Usage section.
 
 -- USAGE
 
-usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [-b] [-s INT] -o
-               DIR [-g STR] [-A] [-B] [-C] [-V] [-v TYPE [TYPE ...]] [--itx]
-               [--variantonly] [--nobinning] [--nocleanup] [--novariant]
-               [-j FILE] [-m SIZE] [-q NAME] [-t COUNT] [--submit]
+usage: usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [--bam] -o DIR
+               [-T DIR] [-g STR] [-v TYPE [TYPE ...]] [--novqsr]
+               [--alignmentonly] [--cleanuponly] [--variantonly] [--nobinning]
+               [--nocleanup] [--novariant] [-A] [-B] [-C] [-V] [-j FILE]
+               [-m SIZE] [-q NAME] [-t COUNT] -account STR [--submit]
 
 Generating the job file for the HugeSeq variant detection pipeline
 
@@ -120,26 +121,30 @@ optional arguments:
                         The FASTQ file(s) for reads 1
   -R FILE [FILE ...], --reads2 FILE [FILE ...]
                         The FASTQ file(s) for reads 2, if paired-end
-  -b, --bam             Support for aligned and coordinate-sorted BAMs as
-                        input (-r). No alignment will be performed.
-  -s INT, --split INT   Split input into INT reads per file (default: no
-                        split)
+  --bam                 Support for aligned BAMs as input. By default input
+                        (-r) is aligned again. Use --variantonly otherwise.
   -o DIR, --output DIR  The output directory
+  -T DIR, --tmp DIR     The TMP directory for storing intermediate files
+                        (default=output directory
   -g STR, --readgroup STR
                         The read group annotation (Default:
                         @RG\tID:Default\tLB:Library\tPL:Illumina\tSM:SAMPLE)
-  -A, --donealign       Sequences already aligned
-  -B, --donebinning     Alignments already binned by chromosomes
-  -C, --donecleanup     Alignments already cleaned
-  -V, --donevariant     Variants already called
   -v TYPE [TYPE ...], --variants TYPE [TYPE ...]
-                        SNP, INDEL, SRA, RPM, RDA, JCT (default to all)
-  --ctx                 Transchromosomal rearrangement detection (only
-                        relevant in binning mode)
-  --variantonly         Only call variants
+                        SNV SRA RPM RDA JCT (default to all)
+  --novqsr              Do not perform VQSR (variant quality score
+                        recalibration) (valid only for SNV calling)
+  --alignmentonly       Only align input FASTQ or BAM files (-r)
+  --cleanuponly         Only clean up input BAM files (-r)
+  --variantonly         Only call variants in input BAM files (-r)
   --nobinning           Do not bin the alignments by chromosomes
   --nocleanup           Do not clean up the alignments
   --novariant           Do not call variants
+  -A, --donealign       Sequences already aligned using the pipeline
+  -B, --donebinning     Alignments already binned by chromosomes using the
+                        pipeline
+  -C, --donecleanup     Alignments already cleaned using the pipeline
+  -V, --donevariant     Variants already called using the pipeline (annotation
+                        only)
   -j FILE, --jobfile FILE
                         The jobfile name (default: stdout)
   -m SIZE, --memory SIZE
@@ -148,5 +153,7 @@ optional arguments:
                         Queue for jobs (default: extended)
   -t COUNT, --threads COUNT
                         Number of threads for alignment, only works for SGE
-                        (default: 1)
+                        (default: 4)
+  -account STR          Accounting string for the purpose of cluster
+                        accounting.
   --submit              Submit the jobs
