@@ -1,72 +1,30 @@
 ##################################
-# Release Notes for HugeSeq v1.2 #
+# Release Notes for HugeSeq v2.0 #
 ##################################
 
-++++ 12/14/2013 ++++
+++++ 7/14/2015 ++++
 
 NOTE:  This is a beta release.  Several components have been modified in the package to accommodate the following changes.
 
 ## Tool "required" upgrades ##
 
-The following upgrades are "required" for HugeSeq-1.2 to operate properly:
+The following upgrades are "required" for HugeSeq-2.0 to operate properly:
 
-* BWA 0.5.9 -> 0.7.4
-* GATK 1.0.5506 -> 2.5.2
-* root -> 5.34.07
-* annovar -> 11122013 (Nov. 12, 2013)
-* bedtools 2.12.0 -> 2.17.0
-* picard-tools -> 1.32
-* cnvnator 0.2.2 -> 0.2.7
-* breakdancer 1.1 -> 1.1.2
-* tabix 0.2.4 -> 0.2.6
-* samtools 0.1.14 -> 0.1.19
-* breakseqlite -> 1.0
-* pindel 0.2.2 -> 0.2.4d
-* vcftools 0.1.5 -> 0.1.10
+* GATK -> 3.2.2
+* root -> 5.34.30
+* pindel -> 0.2.4t
+* vcftools -> 0.1.12
 
-## Major changes since 1.0.1 ##
-* Since the GATK upgrade to v>2.0 the following changes now in place:
+## Major changes since 1.2 ##
 
-	- The "CountCovariates + TableRecalibration" (used in clean_recal.sh) is deprecated and replaced with "BaseRecalibrator +  PrintReads" using "GATK's best practices" recommendations.
-	- The input parameters corresponding to SNP and indels are now unified into SNV (single nucleotide variations).  
-	- var_snp.sh is replaced with var_gatk.sh and hardcoded paths to GATK is replaced with environment variables.
-	- Hardcoded paths to a GATK is changed in clean_realn.sh.
-
-* The GATK's new feature, Variant Quality Score Recalibration (VQSR), including "SelectVariants + VariantRecalibrator + ApplyRecalibration" for both SNPs and indels is implemented (in sv_vqsr.sh) and is a default option that follows genotyping. The feature can be turned off by an input parameter (--novqsr). This application utilizes a number of known variations in various databases (explained below as part of GATK's best practices) to recalibrate the discovered SNVs. In our testing experiments we observed this feature to fail frequently. We therefore recommend users to consult GATK's help community to resolve persisting issues and change VQSR parameters in sv_vqrs.sh application accordingly.
-
-
-* Samtools is now deprecated for calling SNPs and indels.  These functions are now implemented by GATK.
-
-* The TMP directory (for storing intermediate files) previously set as an environment variable is now controlled by an input parameters (--TMP). The default for TMP is the output directory. 
-
-* The "--split" function was previously performed on the "head node" be default. This is removed in the new version due to potential problems it causes for "SGE's head node" functions. We now recommend users to split their input files using the available script "split.py" before using the main script to split their input files. 
-
-* HugeSeq can now accept BAM input files with the following options:
-
-	- The input BAM files can be used "as is" for calling SNVs and SVs, as well as annotations. Note that when a BAM is used "as is" for variation calling, GATK requires to use exactly the same reference genome used for alignment (need to edit $REF environment variable in the main module file). If this requirement is not met, GATK fails due to different ordering of contigs in the reference genome and the input BAM file.  
-	- The input BAM files can also undergo alignment (using BWA features to accept input BAM files) and then used for variation calling. 
-	
-* HugeSeq/1.2 is now requires an arbitrary character string as input for -account parameter. This parameters translates into "-A account" SGE parameter that stamps all associated jobs with the accounting string that may be used by SGE accounting purposes. 
-
-## Required additional datasets ##
-
-* GATK resources needed for VQSR feature is set in the modulefile using the following environment variables:
-
-setenv VQSR_HAPMAP $dat_dir/hg19/ucsc.hg19.vcf
-setenv VQSR_OMNI $dat_dir/hg19/1000G_omni2.hg19.vcf
-setenv VQSR_SNPS $dat_dir/hg19/1000G_phase1.snps.high_confidence.hg19.vcf
-setenv VQSR_INDELS $dat_dir/hg19/Mills_and_1000G_gold_standard.indels.hg19.vcf
-
-These are the datasets recommended as part of "GATK's best practices". We recommend users to prepare these datasets by referring to:
-	- http://www.broadinstitute.org/gatk/guide/article?id=39 and
-	- http://gatkforums.broadinstitute.org/discussion/1213/what-s-in-the-resource-bundle-and-how-can-i-get-it
-
-## Fixed issues ##
-
-* Hardcoded paths in scripts removed and replaced with environment variables
-* Java process memory allocation adjusted to accommodate larger heap sizes
-* sam_sort step no longer fails due to outdated BAI files
-
+- The user can now choose to use HaplotypeCaller as well as UnifiedGenotyper for SNPs and/or Indels.
+- The user can set GATK to output reference-calls. The standard format for these calls is gVCF. The file carrying the reference calls is generated in addition to the standard VCF that carries only the variants.
+- The user can now choose to switch off VQSR for either or both of SNP and Indels.
+- The user can now choose targeted genotyping by means of using exome target captures as input.
+- The failed jobs at the VQSR stage can now be repeated without running the genotyper again by means of a new input parameter "--donegenotyping".
+- The pipeline now is optimized for targeted genotyping using GATK's features for exome data processing (in --targeted mode).
+- The pipeline is now capable of running VQSR on whole data set OR on chromosomes individually. This is independent of the capability to split the data into chromosomes for faster genotyping (i.e. the user can choose to do the genotyping for individual chromosomes but run VQSR on all the chromosomes collectively.)
+- HugeSeq is now uses Stanovar-0.1 for annotation of variants. 
 
 ## Open issues ##
 * Package has never been tested on external systems.  Unforeseen issues may arise

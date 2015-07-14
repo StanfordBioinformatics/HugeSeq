@@ -1,6 +1,7 @@
 #!/bin/env python
 
 import sys, os, re, argparse, subprocess, os.path
+import dircache
 from sjm import *
 from util import *
 from os import listdir
@@ -14,29 +15,40 @@ except KeyError:
         exit(1)
 
 parser = argparse.ArgumentParser(description='Generating the job file for the HugeSeq variant detection pipeline')
-parser.add_argument('-r', '--reads1', metavar='FILE', nargs="+", required=True, help='The FASTQ file(s) for reads 1')
-parser.add_argument('-R', '--reads2', metavar='FILE', nargs="+", help='The FASTQ file(s) for reads 2, if paired-end')
+parser.add_argument('--reads1', metavar='FILE', nargs="+", required=True, help='The FASTQ file(s) for reads 1')
+parser.add_argument('--reads2', metavar='FILE', nargs="+", help='The FASTQ file(s) for reads 2, if paired-end')
+parser.add_argument('--output', metavar='DIR', required=True, help='The output directory')
+parser.add_argument('--account', metavar='STR', help='Accounting string for the purpose of cluster accounting.')
+parser.add_argument('--tmp', metavar='DIR', help='The TMP directory for storing intermediate files (default=output directory')
+parser.add_argument('--readgroup', metavar='STR', default="@RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE", help='The read group annotation (Default: @RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE)')
+parser.add_argument('--samplename', metavar='STR', help='The SM tag in the read group annotation (Default: "SAMPLE" in @RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE)')
 parser.add_argument('--bam', action='store_true', help='Support for aligned BAMs as input. By default input (-r) is aligned again. Use --variantonly otherwise.')
-parser.add_argument('-o', '--output', metavar='DIR', required=True, help='The output directory')
-parser.add_argument('-T', '--tmp', metavar='DIR', help='The TMP directory for storing intermediate files (default=output directory')
-parser.add_argument('-g', '--readgroup', metavar='STR', default="\"@RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE\"", help='The read group annotation (Default: @RG\\tID:Default\\tLB:Library\\tPL:Illumina\\tSM:SAMPLE)')
-parser.add_argument('-v', '--variants', metavar='TYPE', nargs="+", help='SNV SRA RPM RDA JCT (default to all)')
-parser.add_argument('--novqsr', action='store_true', help='Do not perform VQSR (variant quality score recalibration)  (valid only for SNV calling)')
-parser.add_argument('--alignmentonly', action='store_true', help='Only align input FASTQ or BAM files (-r)')
-parser.add_argument('--cleanuponly', action='store_true', help='Only clean up input BAM files (-r)')
-parser.add_argument('--variantonly', action='store_true', help='Only call variants in input BAM files (-r)')
+parser.add_argument('--variants', metavar='TYPE', nargs="+", help='gatk breakdancer cnvnator pindel breakseq (default to all)')
+parser.add_argument('--targeted', action='store_true', help='Use GATK in targeted sequencing mode (default: whole-genome mode)')
+parser.add_argument('--capture', metavar='FILE', nargs="+", help='Capture BED file(s) used for targeted genotyping (default: void, separate multipe files with commas: capture1.bed,capture2.bed,...)')
+parser.add_argument('--relax_realignment', action='store_true', help='Relaxes GATKs realignment when dealing with badly scored reads (default: false)')
+parser.add_argument('--reference_calls', action='store_true', help='Store all reference calls from GATK (default: false) in gVCF format in addition to a standard VCF file containing only the variants (valid only for SNV calling)')
+parser.add_argument('--snp_hapcaller', action='store_true', help='Use GATK HaplotypeCaller to discover SNPs (default: UnifiredGenotyper)')
+parser.add_argument('--indel_hapcaller', action='store_true', help='Use GATK HaplotypeCaller to discover Indels (default: UnifiredGenotyper)')
+parser.add_argument('--nosnpvqsr', action='store_true', help='Do not perform VQSR SNPs (variant quality score recalibration)')
+parser.add_argument('--noindelvqsr', action='store_true', help='Do not perform VQSR on Indels (variant quality score recalibration)')
+parser.add_argument('--vqsrchrom', action='store_true', help='Perform VQSR on individual chromosomes (valid when binning performed; default: VQSR on whole genome VCF)')
 parser.add_argument('--nobinning', action='store_true', help='Do not bin the alignments by chromosomes')
 parser.add_argument('--nocleanup', action='store_true', help='Do not clean up the alignments')
 parser.add_argument('--novariant', action='store_true', help='Do not call variants')
-parser.add_argument('-A', '--donealign', action='store_true', help='Sequences already aligned using the pipeline')
-parser.add_argument('-B', '--donebinning', action='store_true', help='Alignments already binned by chromosomes using the pipeline')
-parser.add_argument('-C', '--donecleanup', action='store_true', help='Alignments already cleaned using the pipeline')
-parser.add_argument('-V', '--donevariant', action='store_true', help='Variants already called using the pipeline (annotation only)')
-parser.add_argument('-j', '--jobfile', metavar='FILE', help='The jobfile name (default: stdout)')
-parser.add_argument('-m', '--memory', metavar='SIZE', type=int, default=12, help='Memory size (GB) per job (default: 12)')
-parser.add_argument('-q', '--queue', metavar='NAME', default="extended", help='Queue for jobs (default: extended)')
-parser.add_argument('-t', '--threads', metavar='COUNT', type=int, default=4, help='Number of threads for alignment, only works for SGE (default: 4)')
-parser.add_argument('-account', metavar='STR', required=True, help='Accounting string for the purpose of cluster accounting.')
+parser.add_argument('--alignmentonly', action='store_true', help='Only align input FASTQ or BAM files (-r)')
+parser.add_argument('--cleanuponly', action='store_true', help='Only clean up input BAM files (-r)')
+parser.add_argument('--variantonly', action='store_true', help='Only call variants in input BAM files (-r)')
+parser.add_argument('--donealign', action='store_true', help='Sequences already aligned using the pipeline')
+parser.add_argument('--donebinning', action='store_true', help='Alignments already binned by chromosomes using the pipeline')
+parser.add_argument('--donecleanup', action='store_true', help='Alignments already cleaned using the pipeline')
+parser.add_argument('--donegenotyping', action='store_true', help='Variants already called using the pipeline but VQSR is not')
+parser.add_argument('--donesnpvqsr', action='store_true', help='Processing is started after SNP VQSR (from Indel VQSR)')
+parser.add_argument('--memory', metavar='SIZE', type=int, default=12, help='Memory size (GB) per job (default: 12)')
+parser.add_argument('--queue', metavar='NAME', default="extended", help='Queue for jobs (default: extended)')
+parser.add_argument('--email', metavar='NAME', default="aminzia@stanford.edu", help='Email address to receive emails for ending or aborting last jobs in the queque')
+parser.add_argument('--threads', metavar='COUNT', type=int, default=4, help='Number of threads for alignment, only works for SGE (default: 4)')
+parser.add_argument('--jobfile', metavar='FILE', help='The jobfile name (default: stdout)')
 parser.add_argument('--submit', action='store_true', help='Submit the jobs')
 args = parser.parse_args()
 
@@ -51,17 +63,45 @@ if (args.tmp is not None):
 	tmpdir=Dir(args.tmp)
 tmpdir.mkdirs()
 
-#sample=re.match(r'(?:.+\\t)?SM:([^\\]+)', args.readgroup)
-sample=re.match(r'(?:.+\\t)?SM:([^\\]+)"', args.readgroup)
-sample=outdir.name if sample is None else sample.group(1)
+capture="True"
+if (args.capture is None):
+	capture="False"
+else:
+	capture=args.capture
+
+id=re.match(r'(?:.+\\t)?ID:([^\\]+)', args.readgroup)
+id=id.group(1)
+lb=re.match(r'(?:.+\\t)?LB:([^\\]+)', args.readgroup)
+lb=lb.group(1)
+pl=re.match(r'(?:.+\\t)?PL:([^\\]+)', args.readgroup)
+pl=pl.group(1)
+sample=re.match(r'(?:.+\\t)?SM:([^\\]+)', args.readgroup)
+sample=sample.group(1)
+
+if args.samplename is not None:
+	sample = args.samplename	
+readgroup="@RG\\tID:"+id+"\\tLB:"+lb+"\\tPL:"+pl+"\\tSM:"+sample
 
 Job.name_prefix=sample+"."
 Job.memory="%sG"%args.memory
 Job.queue=args.queue
 Job.cmd_prefix=os.path.join(home,'bin','hugeseq_mod.sh')
 
+if args.jobfile is None and not args.submit:
+        jobfile=None
+else:
+        if args.jobfile is None:
+                jobfile=File(outdir, "job")
+        else:
+                jobfile=File(args.jobfile)
+
+logfile = jobfile.appext("commands.log")
+open(logfile.path, "w")
+
 tmpdir = getattr(__builtins__, 'str')(tmpdir)
-Job.cmd_prefix = Job.cmd_prefix + ' ' + tmpdir
+logfile = getattr(__builtins__, 'str')(logfile)
+
+Job.cmd_prefix = Job.cmd_prefix + ' ' + tmpdir + ' ' + logfile
 Job.log_dir=logdir.path
 
 def prep(readfiles, ext):
@@ -69,31 +109,33 @@ def prep(readfiles, ext):
         if readfiles is not None:
                 sys.stderr.write(">>>  Pre-processing <<<\n")
                 for f in readfiles:
-                        i = File(f)
-			ii = File(f+".bai")
+                        input = File(f)
+			in_index = File(f+".bai")
                         if (ext==".recal.bam"):
-                                o = File(outdir, i.prefix+ext)
-                                oi = File(outdir, i.prefix+ext+".bai")
-                        	job = Job('prep_reads_bam-%s'%i.prefix)
+                                outfile = File(outdir, input.prefix+ext)
+                                out_index = File(outdir, input.prefix+ext+".bai")
+                        	job = Job('prep_reads_bam-%s'%input.prefix)
                         else:
-                                o = File(outdir, i.name)
-                        	job = Job('prep_reads-%s'%i.prefix)
+                                outfile = File(outdir, input.name)
+                        	job = Job('prep_reads-%s'%input.prefix)
                         job.append('echo "Input preparation performed locally"')
-                        p = subprocess.Popen('prep.sh %s %s'%(i, o), shell=True, stdout=subprocess.PIPE)
+                        p = subprocess.Popen('prep.sh %s %s'%(input, outfile), shell=True, stdout=subprocess.PIPE)
                         rc = p.wait()
                         if rc > 0:
                                 raise Exception, "Error in preparing input. Return code: %s"%rc
                         for l in p.stdout:
                                 sys.stderr.write(l)
 			if (ext==".recal.bam"):
-	                        p = subprocess.Popen('prep.sh %s %s'%(ii, oi), shell=True, stdout=subprocess.PIPE)
+	                        p = subprocess.Popen('prep.sh %s %s'%(in_index, out_index), shell=True, stdout=subprocess.PIPE)
         	                rc = p.wait()
                 	        if rc > 0:
                         	        raise Exception, "Error in preparing input. Return code: %s"%rc
 	                        for l in p.stdout:
         	                        sys.stderr.write(l)
-                        job.output = o
-                        job.sge_options="-A %s"%args.account
+                        job.output = outfile
+                        job.memory = "100K"
+                        job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                        job.status = "done"
                         jobs.append(job)
         return jobs
 
@@ -120,11 +162,11 @@ def align(readjobs1, readjobs2, ext):
                 	bam=(File(outdir, readfile1.prefix) if readfile1.ext=="gz" else readfile1.chdir(outdir)).chext("bwa.bam")
 			sorted=bam.chext("sorted.bam")
 
-                job4 = Job('sam_sort-%s'%readfile1.prefix)
-                job4.memory = "14G"
-                job4.sge_options="-A %s"%args.account
-                job4.append('sam_sort.sh %s %s %s'%(bam, sorted, args.memory-1))
-                job4.append('sam_index.sh %s'%sorted)
+                job4 = Job('picard_sort-%s'%readfile1.prefix)
+                job4.memory = "16G"
+                job4.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job4.append('picard_sort.sh %s %s %s'%(bam, sorted, 8))
+                job4.append('samtools_index.sh %s'%sorted)
                 job4.depend(job1)
                 job4.output=sorted
                 jobs.append(job4)
@@ -135,23 +177,21 @@ def __align(readjob1,readjob2):
         job = None
 	if (args.bam or (readjob2 is None)):
                 readfile=File(readjob1.output)
-                job = Job('aln_mem_sam-%s' % readfile.prefix)
-                job.memory = "8G"
-                job.append('aln_mem_sam.sh %s %s %s'%(readfile,args.threads,args.readgroup))
+                job = Job('bwa-%s' % readfile.prefix)
+                job.memory="%sG"%(args.memory/args.threads)
+                job.append('bwa_bam.sh %s %s \"%s\"'%(readfile,args.threads,readgroup))
                 job.depend(readjob1)
                 if args.threads > 1:
-                        job.memory="%sG"%(args.memory/args.threads)
-                        job.sge_options="-pe shm %s -l h_stack=100M -A %s"%(args.threads, args.account)
+                        job.sge_options="-pe shm %s -l h_stack=100M -l h_rt=120:00:00 -A %s"%(args.threads, args.account)
         elif (readjob1 is not None and readjob2 is not None):
                 readfile1=File(readjob1.output)
                 readfile2=File(readjob2.output)
-                job = Job('aln_mem_sam-%s' % readfile1.prefix)
-                job.memory = "8G"
-                job.append('aln_mem_sam_paired.sh %s %s %s %s'%(readfile1,readfile2,args.threads,args.readgroup))
+                job = Job('bwa-%s' % readfile1.prefix)
+                job.memory="%sG"%(args.memory/args.threads)
+                job.append('bwa_fq.sh %s %s %s \"%s\"'%(readfile1,readfile2,args.threads,readgroup))
                 job.depend(readjob1).depend(readjob2)
                 if args.threads > 1:
-                        job.memory="%sG"%(args.memory/args.threads)
-                        job.sge_options="-pe shm %s -l h_stack=100M -A %s"%(args.threads, args.account)
+                        job.sge_options="-pe shm %s -l h_stack=100M -l h_rt=120:00:00 -A %s"%(args.threads, args.account)
 
         return job
 
@@ -160,26 +200,25 @@ def cleanup(pjobs, ext):
         for pjob in pjobs:
                 bam=pjob.output
                 if (ext!=".recal.bam"):
-			job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam.chext("nodup.bam"), False)
-                	job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam.chext("realn.bam"))
-                	job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam.chext("recal.bam"))
+			job1=__cleanup('picard_nodup-%s'%bam.prefix, 'picard_nodup.sh', bam, bam.chext("nodup.bam"), False)
+                	job2=__cleanup('gatk_realn-%s'%bam.prefix, 'gatk_realn.sh', job1.output, bam.chext("realn.bam"), args.relax_realignment)
+                	job3=__cleanup('gatk_recal-%s'%bam.prefix, 'gatk_recal.sh', job2.output, bam.chext("recal.bam"), False)
 		else:
-                	job1=__cleanup('clean_nodup-%s'%bam.prefix, 'clean_nodup.sh', bam, bam, False)
-			job2=__cleanup('clean_realn-%s'%bam.prefix, 'clean_realn.sh', job1.output, bam)
-                	job3=__cleanup('clean_recal-%s'%bam.prefix, 'clean_recal.sh', job2.output, bam)
+                	job1=__cleanup('picard_nodup-%s'%bam.prefix, 'picard_nodup.sh', bam, bam, False)
+			job2=__cleanup('gatk_realn-%s'%bam.prefix, 'gatk_realn.sh', job1.output, bam, args.relax_realignment)
+                	job3=__cleanup('gatk_recal-%s'%bam.prefix, 'gatk_recal.sh', job2.output, bam, False)
                 job1.depend(pjob)
                 job2.depend(job1)
                 job3.depend(job2)
                 jobs.append(job3)
         return jobs
 
-def __cleanup(jname, cmd, input, output, remove=True):
+def __cleanup(jname, cmd, input, output, remove):
         job=Job(jname)
-        job.memory = "12G"
-        job.sge_options="-A %s"%args.account
-        job.append('%s %s %s'%(cmd, input, output))
-        job.append('sam_index.sh %s' % output)
-        #if remove: job.append('sam_rm.sh %s'%input)
+        job.memory = "24G"
+        job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+        job.append('%s %s %s %s'%(cmd, input, output, remove))
+        job.append('samtools_index.sh %s' % output)
         job.output=output
         return job
 
@@ -187,7 +226,6 @@ def binning(pjobs, fai):
         jobs=[]
         chrs=[]
         for l in open(fai):
-                #chr=re.split(r"\s", l)[0]
 		m=re.match(r"(chr..|chr.)\t", l)
 		if m:
                 	chrs.append(m.group(1))
@@ -196,83 +234,98 @@ def binning(pjobs, fai):
                 chrBam=File(outdir, chr+".bam")
                 job = Job('bin_aln-%s'%chr)
                 job.memory = "3G"
-        	job.sge_options="-A %s"%args.account
+        	job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
                 job.output = chrBam
-                job.append('bin_sam.sh %s %s %s'%(chr, chrBam, " ".join([pjob.output.path for pjob in pjobs])))
-                job.append('sam_index.sh %s'%chrBam)
+                job.append('bin_bam.sh %s %s %s'%(chr, chrBam, " ".join([pjob.output.path for pjob in pjobs])))
+                job.append('samtools_index.sh %s'%chrBam)
                 job.depend(*pjobs)
                 jobs.append(job)
 	return jobs
 
-def callvars(pjobs, combine, variants, vqsr):
+def callvars(pjobs, combine, variants):
         jobs=([],[])
         if len(pjobs)>0:
                 if not combine:
                         for pjob in pjobs:
-                                __callvars(jobs, pjob.output.prefix, pjob.output.absprefix, [pjob.output.path], [pjob], variants, vqsr)
+                                __callvars(jobs, pjob.output.prefix, pjob.output.absprefix, [pjob.output.path], [pjob], variants)
                 else:
-                        __callvars(jobs, sample, File(outdir.path, sample).path, [pjob.output.path for pjob in pjobs], pjobs, variants, vqsr)
+                        __callvars(jobs, sample, File(outdir.path, sample).path, [pjob.output.path for pjob in pjobs], pjobs, variants)
         return jobs
 
-def __callvars(jobs, idprefix, output, inputs, pjobs, variants, vqsr):
+def __callvars(jobs, idprefix, output, inputs, pjobs, variants):
         input=" ".join(inputs)
-        output="".join(output.split(".recal")) # new
+        output="".join(output.split(".recal"))
         jobs1=jobs[0]
 
-	if (variants is None or "SNV" in variants):
-        	job0=Job('var_gatk-%s'%idprefix)
-        	job0.memory = "15G"
-        	job0.sge_options="-A %s"%args.account
-        	job0.output=File(output+".gatk.vcf")
-        	job0.append('var_gatk.sh %s %s'%(job0.output,input))
-        	job0.depend(*pjobs)
-
-        	if not vqsr:
-                	jobs1.append(job0)
-        	else:
-                	job1=Job('var_vqsr-%s'%idprefix)
-	                job1.memory = "12G"
-        		job1.sge_options="-A %s"%args.account
-        	        job1.output=File(job0.output)
-                	job1.append('var_vqsr.sh %s'%(job1.output))
-                	job1.output=File(output+".vcf")
-        	        job1.append('combine_vqsr.py %s %s %s'%(output+".vcf", output+".vqsr.snp.vcf", output+".vqsr.indel.vcf"))
-	                job1.depend(job0)
-        	        #job2=Job('combineRecal_SnpIndel_%s'%idprefix)
-                	#job2.memory = "3G"
-        	        #job2.append('combine_recal_snv_indel.py %s %s %s'%(output+".vqsr.snp.vcf", output+".vqsr.indel.vcf", output+".vcf"))
-                	#job2.output=File(output+".vcf")
-                	#job2.depend(job1)
-			#jobs1.append(job2)
-			jobs1.append(job1)
+	if (variants is None or "gatk" in variants):		
+                job0=Job('gatk_vc-%s'%idprefix)
+                job0.memory = "16G"
+                job0.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job0.output=File(output+".gatk.vcf")
+                job0.append('gatk_vc.sh %s %s %s %s %s %s'%(job0.output, capture, args.reference_calls, args.snp_hapcaller, args.indel_hapcaller, input))
+                job0.depend(*pjobs)
+		if args.donegenotyping:
+			job0.status="done"
+		
+                if (not args.vqsrchrom):
+                        jobs1.append(job0)
+                else:
+			job1=Job('vqsr_snp-%s'%idprefix)
+	      		job1.memory = "16G"
+       			job1.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+	        	job1.output=File(job0.output)
+       		        job1.append('vqsr_snp.sh %s %s %s %s %s'%(job1.output, not args.nosnpvqsr, args.targeted, not args.snp_hapcaller, args.donesnpvqsr))
+        		job1.depend(job0)
+			
+			job2=Job('vqsr_indel-%s'%idprefix)
+        	  	job2.memory = "16G"
+       			job2.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+		        job2.output=File(job0.output)
+      			job2.append('vqsr_indel.sh %s %s %s'%(job2.output, not args.noindelvqsr, args.targeted))
+               		job2.depend(job1)
+	
+			job3=Job('combine_vqsr-%s'%idprefix)
+		        job3.memory = "12G"
+			job3.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+	       		job3.output=File(output+".snv.vcf")
+     		
+		       	if args.reference_calls:
+				job3.append('combine_vcf.sh %s %s %s %s %s'%(output+".snv.vcf", False, False, output+".vqsr.snp.vcf", output+".vqsr.indel.vcf"))
+				job3.append('write_refcalls.sh %s'%(job1.output))
+				job3.append('combine_vcf.sh %s %s %s %s %s %s'%(output+".snv.refcalls.vcf", False, True, output+"refcalls.vcf", output+".vqsr.snp.vcf", output+".vqsr.indel.vcf"))
+     		        else:
+				job3.append('combine_vcf.sh %s %s %s %s %s'%(output+".snv.vcf", False, False, output+".vqsr.snp.vcf", output+".vqsr.indel.vcf"))
+       	        	job3.depend(job2)
+		
+			jobs1.append(job3)
 
 	jobs2=jobs[1]
 	job=None
-        if (variants is None or "RPM" in variants):
-                job=Job('var_sv_rpm-%s'%idprefix)
-                job.memory = "15G"
-        	job.sge_options="-A %s"%args.account
-                job.output=File(output+".rpm.gff")
-                jobs2.append(job.append('var_sv_rpm.sh %s %s'%(job.output,input)).depend(*pjobs))
-        if (variants is None or "SRA" in variants):
+        if (variants is None or "breakdancer" in variants):
+                job=Job('breakdancer-%s'%idprefix)
+                job.memory = "24G"
+        	job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job.output=File(output+".breakdancer.gff")
+                jobs2.append(job.append('breakdancer.sh %s %s'%(job.output,input)).depend(*pjobs))
+        if (variants is None or "pindel" in variants):
                 rpmJob=job
-                job=Job('var_sv_sra-%s'%idprefix)
-                job.memory = "15G"
-        	job.sge_options="-A %s"%args.account
-                job.output=File(output+".sra.gff")
-                jobs2.append(job.append('var_sv_sra.sh %s %s'%(job.output,input)).depend(*pjobs if rpmJob is None else [rpmJob]))
-        if (variants is None or "RDA" in variants):
-                job=Job('var_sv_rda-%s'%idprefix)
-                job.memory = "15G"
-        	job.sge_options="-A %s"%args.account
-                job.output=File(output+".rda.gff")
-                jobs2.append(job.append('var_sv_rda.sh %s %s'%(job.output,input)).depend(*pjobs))
-        if (variants is None or "JCT" in variants):
-                job=Job('var_sv_jct-%s'%idprefix)
-                job.memory = "15G"
-        	job.sge_options="-A %s"%args.account
-                job.output=File(output+".jct.gff")
-                jobs2.append(job.append('var_sv_jct.sh %s %s'%(job.output,input)).depend(*pjobs))
+                job=Job('pindel-%s'%idprefix)
+                job.memory = "24G"
+        	job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job.output=File(output+".pindel.gff")
+                jobs2.append(job.append('pindel.sh %s %s'%(job.output,input)).depend(*pjobs if rpmJob is None else [rpmJob]))
+        if (variants is None or "cnvnator" in variants):
+                job=Job('cnvnator-%s'%idprefix)
+                job.memory = "24G"
+        	job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job.output=File(output+".cnvnator.gff")
+                jobs2.append(job.append('cnvnator.sh %s %s'%(job.output,input)).depend(*pjobs))
+        if (variants is None or "breakseq" in variants):
+                job=Job('breakseq-%s'%idprefix)
+                job.memory = "24G"
+        	job.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job.output=File(output+".breakseq.gff")
+                jobs2.append(job.append('breakseq.sh %s %s'%(job.output,input)).depend(*pjobs))
 
 def group_output_by_suffix(suffixes, jobs):
         groups={}
@@ -282,42 +335,98 @@ def group_output_by_suffix(suffixes, jobs):
                         groups[suffixes].append(i.output.path)
         return groups
 
+def group_output_bams_by_suffix(suffixes, bams, jobs):
+        groups={}
+        groups[suffixes]=[]
+        for i in jobs:
+                if i.output.path.endswith(suffixes):
+                        out = str(i.output.path)
+                        out=out.replace(suffixes, bams)
+                        groups[suffixes].append(out)
+        return groups
+
+
 def merge_annotate(siJobs, svJobs, variants):
         jobs=[]
-        
-	keys=".vcf"
+
+	keys=".gatk.vcf"
+        if (args.vqsrchrom):
+		keys=".snv.vcf"
         siCombinedVCFs=group_output_by_suffix(keys, siJobs)
+		
+        if variants is None or "gatk" in variants:
+                job1=Job('concat-vcf-%s'%sample)
+                for i in siCombinedVCFs.keys():
 
-	if variants is None or "SNV" in variants:
-	        job0=Job('concat-vcf-%s'%sample)
-        	for i in siCombinedVCFs.keys():
-                	job0.append('concat_vcf.sh %s %s'%(File(outdir.path, sample+".snpindel.vcf"), " ".join(siCombinedVCFs[i])))
-	        job0.memory = "8G"
-        	job0.sge_options="-A %s"%args.account
-        	job0.output=File(outdir.path, sample+".snpindel.vcf")
-	        job0.depend(*siJobs)
+                        if (not args.vqsrchrom):
+				if args.nobinning:
+                                	job1.append('combine_vcf.sh %s %s %s %s'%(File(outdir.path, sample+".gatk.vcf"), True, False, " ".join(siCombinedVCFs[i])))
+                                else:
+					job1.append('combine_vcf.sh %s %s %s %s'%(File(outdir.path, sample+".gatk.vcf"), False, False, " ".join(siCombinedVCFs[i])))
+                        else:
+                                job1.append('combine_vcf.sh %s %s %s %s'%(File(outdir.path, "genome.recal.vcf"), False, False, " ".join(siCombinedVCFs[i])))
 
-	        job1=Job('anno_vcf-%s'%sample)
-        	job1.memory = "6G"
-        	job1.sge_options="-A %s"%args.account
-	        job1.output=File(outdir.path, sample+".snpindel.tsv")
-        	job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
-	        jobs.append(job1)
+        	if (not args.vqsrchrom):
+	                job1.memory = "16G"
+        	        job1.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                	job1.output=File(outdir.path, sample+".gatk.vcf")
+	                job1.depend(*siJobs)
+	                if args.donegenotyping:
+				job1.status="done"
 
-	if variants is None or "SRA" in variants or "RPM" in variants or "RDA" in variants or "JCT" in variants:
-	        inputs=" ".join([j.output.path for j in svJobs])
-        	job2=Job('merge_gff-%s'%sample)
-	        job2.memory = "5G"
-        	job2.sge_options="-A %s"%args.account
-        	job2.output=File(outdir.path, sample+".svcnv.gff")
-	        job2.append('merge_gff.sh %s %s'%(job2.output, inputs)).depend(*svJobs)
+			job2=Job('vqsr_snp-%s'%sample)
+      			job2.memory = "16G"
+       			job2.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+	        	job2.output=File(job1.output)
+       		        job2.append('vqsr_snp.sh %s %s %s %s %s'%(job2.output, not args.nosnpvqsr, args.targeted, not args.snp_hapcaller, args.donesnpvqsr))
+        		job2.depend(job1)
+		
+			job3=Job('vqsr_indel-%s'%sample)
+        	  	job3.memory = "16G"
+       			job3.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+		        job3.output=File(job1.output)
+      			job3.append('vqsr_indel.sh %s %s %s'%(job3.output, not args.noindelvqsr, args.targeted))
+               		job3.depend(job2)
 
-        	job3=Job('anno_gff-%s'%sample)
-	        job3.memory = "6G"
-        	job3.sge_options="-A %s"%args.account
-        	job3.output=File(outdir.path, sample+".svcnv.tsv")
-	        job3.append('annotate.py %s %s'%(job3.output, job2.output)).depend(job2)
-        	jobs.append(job3)
+			job4=Job('combine_vqsr-%s'%sample)
+		        job4.memory = "12G"
+                	job4.sge_options="-l h_rt=120:00:00 -M %s -m ea -A %s"%(args.email, args.account)
+	       		job4.output=File(outdir.path, sample+".vcf")
+
+			if args.reference_calls:
+     		        	job4.append('combine_vcf.sh %s %s %s %s %s'%(File(outdir.path, sample+".vcf"), False, False, File(outdir.path, sample+".vqsr.snp.vcf"), File(outdir.path, sample+".vqsr.indel.vcf")))
+                                job4.append('write_refcalls.sh %s'%(job1.output))
+                                job4.append('combine_vcf.sh %s %s %s %s %s %s'%(File(outdir.path, sample+".snv.refcalls.vcf"), False, True, File(outdir.path, sample+".refcalls.vcf"), File(outdir.path, sample+".vqsr.snp.vcf"), File(outdir.path, sample+".vqsr.indel.vcf")))
+       	        	else:	
+     		        	job4.append('combine_vcf.sh %s %s %s %s %s'%(File(outdir.path, sample+".vcf"), False, False, File(outdir.path, sample+".vqsr.snp.vcf"), File(outdir.path, sample+".vqsr.indel.vcf")))
+
+			job4.depend(job3)
+			jobs.append(job4)
+		else:
+
+	                job1=Job('anno_vcf-%s'%sample)
+        	        job1.memory = "16G"
+                	job1.sge_options="-l h_rt=120:00:00 -M %s -m ea -A %s"%(args.email, args.account)
+	                job1.output=File(outdir.path, sample+".vcf.tsv")
+        	        job1.append('annotate.py %s %s'%(job1.output, job0.output)).depend(job0)
+                
+			jobs.append(job1)
+        
+	if variants is None or "breakdancer" in variants or "cnvnator" in variants or "pindel" in variants or "breakseq" in variants:
+                inputs=" ".join([j.output.path for j in svJobs])
+                job2=Job('merge_gff-%s'%sample)
+                job2.memory = "5G"
+                job2.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job2.output=File(outdir.path, sample+".gff")
+                job2.append('merge_gff.sh %s %s'%(job2.output, inputs)).depend(*svJobs)
+
+                job3=Job('anno_gff-%s'%sample)
+                job3.memory = "6G"
+                #job3.sge_options="-l h_rt=120:00:00 -A %s"%args.account
+                job3.output=File(outdir.path, sample+".gff.tsv")
+                job3.sge_options="-l h_rt=120:00:00 -M %s -m ea -A %s"%(args.email, args.account)
+                job3.append('annotate.py %s %s'%(job3.output, job2.output)).depend(job2)
+                jobs.append(job3)
 
         return jobs
 
@@ -357,22 +466,9 @@ if not args.nocleanup:
         jobs=cleanup(jobs, extension)
         markdone(jobs, args.donecleanup or args.variantonly)
 
-
 if not args.alignmentonly and not args.cleanuponly and not args.novariant:
-	if not args.novqsr: vqsr = True
-        else: vqsr = ""
-	siJobs, svJobs=callvars(jobs, args.nobinning, args.variants, vqsr)
-	markdone(siJobs+svJobs, args.donevariant)		
+	siJobs, svJobs=callvars(jobs, args.nobinning, args.variants)
         jobs=merge_annotate(siJobs, svJobs, args.variants)
-        markdone(jobs, args.donevariant and not args.variantonly)
-
-if args.jobfile is None and not args.submit:
-        jobfile=None
-else:
-        if args.jobfile is None:
-                jobfile=File(outdir, "job")
-        else:
-                jobfile=File(args.jobfile)
 
 descout = sys.stdout if jobfile is None else open(jobfile.path, "w")
 descout.write(Job().depend(*jobs).desc())

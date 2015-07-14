@@ -10,11 +10,12 @@ fi
 
 
 o=`cd \`dirname $1\`; pwd`/`basename $1`
+odir=`dirname $1`
 shift
 p=${o/.gff/}
 
-rpm_output=${p/.sra/}.rpm.txt
-rpm_cfg=${p/.sra/}.rpm.cfg
+rpm_output=${p/.pindel/}.breakdancer.txt
+rpm_cfg=${p/.pindel/}.breakdancer.cfg
 
 chr="ALL"
 if [ $# -eq 1 ]
@@ -31,6 +32,7 @@ then
 	bOpt="-b $rpm_output"
 fi
 
+cd $odir
 pin_cfg=$p.cfg
 for bam in $*
 do

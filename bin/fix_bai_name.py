@@ -21,5 +21,4 @@ if os.path.exists(new_filename):
     print "Existing file %s renamed to %s.old" % (new_filename, new_filename)
     os.rename(new_filename, new_filename + '.old')
 
-#os.rename(orig_filename, new_filename)
 os.link(orig_filename, new_filename)

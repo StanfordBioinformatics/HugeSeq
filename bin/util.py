@@ -20,6 +20,9 @@ class File:
 
 	def chext(self, ext):
 		return File(self.absprefix+"."+ext)
+	
+	def appext(self, ext):
+		return File(self.dir + "/" + self.name + "." + ext)
 
 	def exists(self):
 		return os.path.exists(self.path)

@@ -22,14 +22,19 @@ then
 	gmem=$3
 fi
 
-echo ">>> Sorting on BAM $f"
-java -Xms${gmem}g -Xmx${gmem}g -jar $PICARD/SortSam.jar \
+command="java -Xms${gmem}g -Xmx${gmem}g -jar $PICARD/SortSam.jar \
 	TMP_DIR=$TMP \
 	INPUT=$f \
 	OUTPUT=$o \
 	MAX_RECORDS_IN_RAM=$(($gmem*250000)) \
 	VALIDATION_STRINGENCY=SILENT \
-	SORT_ORDER=coordinate
+	SORT_ORDER=coordinate"
+
+echo ">>> Sorting on BAM $f"
+echo ">>> Sorting on BAM $f" >> $LOGFILE
+echo ">>> $command"
+echo ">>> $command" >> $LOGFILE
+$command
 
 if [ "$2" = '-' ]
 then

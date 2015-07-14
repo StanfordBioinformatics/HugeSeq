@@ -7,7 +7,7 @@
 
 -- DEPENDENCIES
 
-+ ANNOVAR version 11122013 (Nov. 12, 2013)
++ STANOVAR version 0.1
 
 + BEDtools version 2.17.0
 
@@ -19,21 +19,17 @@
 
 + CNVnator version 0.2.7
 
-+ GATK version 2.5.2
++ GATK version 3.2.2
 
-+ JDK version 1.6.0_21
++ JDK version 1.7.0_03
 
 + Modules Release 3.2.8
 
 + Perl
 
-+ Picard Tools version 1.64
++ Picard Tools version 1.32
 
-+ Pindel version 0.2.2
-
-+ Plantation version 2
-
-+ pysam version 0.6
++ Pindel version 0.2.4t
 
 + Python version 2.7
 
@@ -41,7 +37,14 @@
 
 + Tabix version 0.2.6
 
-+ VCFtools version 0.1.10
++ vcftools version 0.1.12
+
++ zlib version 1.2.7
+
++ root version 5.34.30
+
++ r version 3.2.0
+
 
 -- INSTALLATION
 
@@ -83,9 +86,8 @@ UCSC Known Genes (knownGene)
 dbSNP (snp132)
 SIFT (avsift)
 RepeatMasker (buildver_rmsk.gff)
-The ANNOVAR databases should be installed in the humandb directory under the program's directory. The rest of the datasets are recommended to be stored under a single parent directory, such as ~/data/hg19 and ~/data/bplib. 
+The STANOVAR application should be installed and corresponding module need to bed define. 
 
-HugeSeq
 
 Download HugeSeq to your server.
 
@@ -93,11 +95,11 @@ Extract the programs from the compressed archive to a directory, such as ~/app. 
 
 export MODULEPATH=/path-to-HugeSeq/modulefiles:$MODULEPATH
 
-In addition, modify the module file, such as /path-to-HugeSeq/modulefiles/hugeseq/1.0, and change all the programs' paths to the locations where you installed the required programs and the data paths to where you stored the datasets.
+In addition, modify the module file, such as /path-to-HugeSeq/modulefiles/hugeseq/2.0, and change all the programs' paths to the locations where you installed the required programs and the data paths to where you stored the datasets.
 
 Logout and login again to your shell to activate the login profile with the latest configuration. You should now be able to run HugeSeq by loading its module:
 
-> module load hugeseq
+> module load hugeseq/2.0
 
 After loading the module, you can run HugeSeq simply by typing:
 
@@ -107,53 +109,81 @@ For the usage of HugeSeq, please refer to the Usage section.
 
 -- USAGE
 
-usage: hugeseq [-h] -r FILE [FILE ...] [-R FILE [FILE ...]] [--bam] -o DIR
-               [-T DIR] [-g STR] [-v TYPE [TYPE ...]] [--novqsr]
-               [--alignmentonly] [--cleanuponly] [--variantonly] [--nobinning]
-               [--nocleanup] [--novariant] [-A] [-B] [-C] [-V] [-j FILE]
-               [-m SIZE] [-q NAME] [-t COUNT] -account STR [--submit]:Q
+usage: hugeseq [-h] --reads1 FILE [FILE ...] [--reads2 FILE [FILE ...]]
+               --output DIR [--account STR] [--tmp DIR] [--readgroup STR]
+               [--samplename STR] [--bam] [--variants TYPE [TYPE ...]]
+               [--targeted] [--capture FILE [FILE ...]] [--relax_realignment]
+               [--reference_calls] [--snp_hapcaller] [--indel_hapcaller]
+               [--nosnpvqsr] [--noindelvqsr] [--vqsrchrom] [--nobinning]
+               [--nocleanup] [--novariant] [--alignmentonly] [--cleanuponly]
+               [--variantonly] [--donealign] [--donebinning] [--donecleanup]
+               [--donegenotyping] [--donesnpvqsr] [--memory SIZE]
+               [--queue NAME] [--email NAME] [--threads COUNT]
+               [--jobfile FILE] [--submit]
 
 Generating the job file for the HugeSeq variant detection pipeline
 
 optional arguments:
   -h, --help            show this help message and exit
-  -r FILE [FILE ...], --reads1 FILE [FILE ...]
+  --reads1 FILE [FILE ...]
                         The FASTQ file(s) for reads 1
-  -R FILE [FILE ...], --reads2 FILE [FILE ...]
+  --reads2 FILE [FILE ...]
                         The FASTQ file(s) for reads 2, if paired-end
+  --output DIR          The output directory
+  --account STR         Accounting string for the purpose of cluster
+                        accounting.
+  --tmp DIR             The TMP directory for storing intermediate files
+                        (default=output directory
+  --readgroup STR       The read group annotation (Default:
+                        @RG\tID:Default\tLB:Library\tPL:Illumina\tSM:SAMPLE)
+  --samplename STR      The SM tag in the read group annotation (Default:
+                        "SAMPLE" in
+                        @RG\tID:Default\tLB:Library\tPL:Illumina\tSM:SAMPLE)
   --bam                 Support for aligned BAMs as input. By default input
                         (-r) is aligned again. Use --variantonly otherwise.
-  -o DIR, --output DIR  The output directory
-  -T DIR, --tmp DIR     The TMP directory for storing intermediate files
-                        (default=output directory
-  -g STR, --readgroup STR
-                        The read group annotation (Default:
-                        @RG\tID:Default\tLB:Library\tPL:Illumina\tSM:SAMPLE)
-  -v TYPE [TYPE ...], --variants TYPE [TYPE ...]
-                        SNV SRA RPM RDA JCT (default to all)
-  --novqsr              Do not perform VQSR (variant quality score
-                        recalibration) (valid only for SNV calling)
-  --alignmentonly       Only align input FASTQ or BAM files (-r)
-  --cleanuponly         Only clean up input BAM files (-r)
-  --variantonly         Only call variants in input BAM files (-r)
+  --variants TYPE [TYPE ...]
+                        gatk breakdancer cnvnator pindel breakseq (default to
+                        all)
+  --targeted            Use GATK in targeted sequencing mode (default: whole-
+                        genome mode)
+  --capture FILE [FILE ...]
+                        Capture BED file(s) used for targeted genotyping
+                        (default: void, separate multipe files with commas:
+                        capture1.bed,capture2.bed,...)
+  --relax_realignment   Relaxes GATKs realignment when dealing with badly
+                        scored reads (default: false)
+  --reference_calls     Store all reference calls from GATK (default: false)
+                        in gVCF format in addition to a standard VCF file
+                        containing only the variants (valid only for SNV
+                        calling)
+  --snp_hapcaller       Use GATK HaplotypeCaller to discover SNPs (default:
+                        UnifiredGenotyper)
+  --indel_hapcaller     Use GATK HaplotypeCaller to discover Indels (default:
+                        UnifiredGenotyper)
+  --nosnpvqsr           Do not perform VQSR SNPs (variant quality score
+                        recalibration)
+  --noindelvqsr         Do not perform VQSR on Indels (variant quality score
+                        recalibration)
+  --vqsrchrom           Perform VQSR on individual chromosomes (valid when
+                        binning performed; default: VQSR on whole genome VCF)
   --nobinning           Do not bin the alignments by chromosomes
   --nocleanup           Do not clean up the alignments
   --novariant           Do not call variants
-  -A, --donealign       Sequences already aligned using the pipeline
-  -B, --donebinning     Alignments already binned by chromosomes using the
+  --alignmentonly       Only align input FASTQ or BAM files (-r)
+  --cleanuponly         Only clean up input BAM files (-r)
+  --variantonly         Only call variants in input BAM files (-r)
+  --donealign           Sequences already aligned using the pipeline
+  --donebinning         Alignments already binned by chromosomes using the
                         pipeline
-  -C, --donecleanup     Alignments already cleaned using the pipeline
-  -V, --donevariant     Variants already called using the pipeline (annotation
-                        only)
-  -j FILE, --jobfile FILE
-                        The jobfile name (default: stdout)
-  -m SIZE, --memory SIZE
-                        Memory size (GB) per job (default: 12)
-  -q NAME, --queue NAME
-                        Queue for jobs (default: extended)
-  -t COUNT, --threads COUNT
-                        Number of threads for alignment, only works for SGE
+  --donecleanup         Alignments already cleaned using the pipeline
+  --donegenotyping      Variants already called using the pipeline but VQSR is
+                        not
+  --donesnpvqsr         Processing is started after SNP VQSR (from Indel VQSR)
+  --memory SIZE         Memory size (GB) per job (default: 12)
+  --queue NAME          Queue for jobs (default: extended)
+  --email NAME          Email address to receive emails for ending or aborting
+                        last jobs in the queque
+  --threads COUNT       Number of threads for alignment, only works for SGE
                         (default: 4)
-  -account STR          Accounting string for the purpose of cluster
-                        accounting.
+  --jobfile FILE        The jobfile name (default: stdout)
   --submit              Submit the jobs
