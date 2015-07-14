@@ -1,0 +1,77 @@
+#%Module1.0
+# HugeSeq Module File
+#
+## HugeSeq modulefile
+##
+## Initializes HugeSeq
+##
+
+proc ModulesHelp { } {
+#        global hugeseq_version
+        puts stderr "\tInitializes your environment to use the HugeSeq variant detection pipeline\n"
+        puts stderr "\tVersion $hugeseq_version\n"
+}
+
+module-whatis "Initializes the HugeSeq variant detection pipeline"
+
+# Setting paths and env for HugeSeq
+# for Tcl script use only
+set hugeseqversion 2.0
+
+# sets the MODULESAPPSDIR env var
+module add modsappsdir
+
+setenv HUGESEQ_HOME ~/HugeSeq
+setenv HUGESEQROOT ~/HugeSeq
+prepend-path PATH ~/HugeSeq/bin
+
+# Setting data resource directory
+set dat_dir ~/Resources/GATK
+
+# Setting paths for programming tools
+module load python
+
+# Setting paths and env for alignment tools
+module load bwa
+
+# Setting paths and env for variant detection annotation tools
+module load gatk
+module load cnvnator
+module load breakseqlite
+module load annovar
+module load samtools
+module load r
+
+# Setting perl libraries (for BreakDancer)
+setenv PERLLIB /srv/gs1/software/hugeseq/hugeseq-2.0/perllib
+prepend-path PERL5LIB $::env(PERLLIB)/File-Path-2.08/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/Statistics-Descriptive-2.6/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GD-2.45/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDGraph-1.44/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDGraph-histogram-1.1/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/GDTextUtil-0.86/blib/lib
+prepend-path PERL5LIB $::env(PERLLIB)/Math-CDF-0.1/blib/lib
+
+# Setting paths and env for utilities
+module load breakdancer
+module load pindel
+module load bedtools
+module load tabix
+module load vcftools
+module load root
+
+# Setting env for supporting databases
+setenv BPLIB $dat_dir/bplib/bplib.alt.fa
+setenv REF $dat_dir/hg19-3.0/ucsc.hg19.fasta
+setenv DIC $dat_dir/hg19-3.0/ucsc.hg19.dict
+setenv DBSNP $dat_dir/hg19-3.0/dbsnp_138.hg19.vcf
+setenv HAPMAP $dat_dir/hg19-3.0/hapmap_3.3.hg19.vcf
+setenv OMNI_1K $dat_dir/hg19-3.0/1000G_omni2.5.hg19.vcf
+setenv GOLD_1K_SNPS $dat_dir/hg19-3.0/1000G_phase1.snps.high_confidence.hg19.vcf
+setenv MILLS_1K_GOLD_INDELS $dat_dir/hg19-3.0/Mills_and_1000G_gold_standard.indels.hg19.vcf
+setenv GOLD_1K_INDELS $dat_dir/hg19-3.0/1000G_phase1.indels.hg19.vcf
+
+module load picard-tools
+
+# Setting paths and env for the Simple Job Manager (SJM)
+module load sjm

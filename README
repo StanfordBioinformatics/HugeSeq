@@ -80,13 +80,12 @@ A .dict dictionary of the contig names and sizes (e.g. hg19.fa.dict)
 A .fai fasta index file (e.g. hg19.fa.fai)
 For creating .dict and .fai, please see here. All the indexes and dictionary should reside in the reference genome directory which contains the whole genome FASTA (e.g. hg19.fa)
 The breakpoint junctions (i.e. BreakSeq library in FASTA format: bplib.fa)
-The SNP annotation (i.e. dbSNP in ROD/VCF format: snp132.rod)
-The ANNOVAR databases (dbtype)
+The SNP annotation
 UCSC Known Genes (knownGene)
-dbSNP (snp132)
+dbSNP
 SIFT (avsift)
 RepeatMasker (buildver_rmsk.gff)
-The STANOVAR application should be installed and corresponding module need to bed define. 
+The STANOVAR application should be installed and corresponding module need to be defined. 
 
 
 Download HugeSeq to your server.
